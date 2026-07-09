@@ -9,6 +9,7 @@ class UserCreate(BaseModel):
 
     email: EmailStr
     password: str
+    role: str = "Viewer"
 
     @field_validator("password")
     @classmethod
@@ -41,9 +42,24 @@ class UserResponse(BaseModel):
 
     id: int
     email: str
+    role: str
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        """Pydantic config."""
+
+        from_attributes = True
+
+
+class CurrentUser(BaseModel):
+    """Schema for current authenticated user information."""
+
+    id: int
+    email: str
+    role: str
+    is_active: bool
 
     class Config:
         """Pydantic config."""
@@ -57,16 +73,3 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     expires_in: int  # seconds
-
-
-class CurrentUser(BaseModel):
-    """Schema for current authenticated user information."""
-
-    id: int
-    email: str
-    is_active: bool
-
-    class Config:
-        """Pydantic config."""
-
-        from_attributes = True

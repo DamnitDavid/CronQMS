@@ -7,13 +7,16 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
+#Virtual environment setup (Higher security and isolation)
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --user --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Final stage
 FROM python:3.11-slim
@@ -26,11 +29,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Python dependencies from builder
-COPY --from=builder /root/.local /root/.local
+# Copy virtual environment from builder stage
+COPY --from=builder /opt/venv /opt/venv
 
-# Make sure scripts in .local are usable
-ENV PATH=/root/.local/bin:$PATH
+# Make sure scripts in virtual environment are usable
+ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy application code
 COPY . .

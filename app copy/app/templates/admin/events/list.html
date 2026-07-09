@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Events - Proins Admin{% endblock %}
+
+{% block content %}
+<div class="admin-shell">
+    <aside class="admin-sidebar">
+        <div class="brand">Proins</div>
+        <nav>
+            <a href="/admin/dashboard">Dashboard</a>
+            <a href="/admin/events" class="active">Events</a>
+            <a href="#">Users</a>
+            <a href="#">Reports</a>
+        </nav>
+    </aside>
+    <div class="admin-main">
+        <header class="admin-topbar">
+            <div>
+                <h1>Events</h1>
+                <p>Manage event records and workflow state.</p>
+            </div>
+            <div class="profile-menu">
+                <span>{{ current_user.email }}</span>
+            </div>
+        </header>
+
+        <section class="filters">
+            <form hx-get="/admin/events" hx-target="#eventTable" hx-swap="outerHTML" class="filter-form">
+                <label>
+                    Search
+                    <input type="search" name="search" placeholder="Search events...">
+                </label>
+                <label>
+                    Status
+                    <select name="status">
+                        <option value="">All</option>
+                        <option>Open</option>
+                        <option>In_Progress</option>
+                        <option>Resolved</option>
+                        <option>Closed</option>
+                    </select>
+                </label>
+                <label>
+                    Priority
+                    <select name="priority">
+                        <option value="">All</option>
+                        <option>Low</option>
+                        <option>Medium</option>
+                        <option>High</option>
+                        <option>Critical</option>
+                    </select>
+                </label>
+                <button type="submit">Filter</button>
+            </form>
+        </section>
+
+        <section id="eventTable" class="table-shell">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if events %}
+                        {% for event in events %}
+                        <tr>
+                            <td>{{ event.id }}</td>
+                            <td>{{ event.title }}</td>
+                            <td>{{ event.status }}</td>
+                            <td>{{ event.priority }}</td>
+                            <td>{{ event.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5">No events found. Create one from the dashboard.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </section>
+    </div>
+</div>
+{% endblock %}

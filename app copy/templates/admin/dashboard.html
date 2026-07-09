@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Proins{% endblock %}
+
+{% block content %}
+<div class="admin-shell">
+    <aside class="admin-sidebar">
+        <div class="brand">Proins</div>
+        <nav>
+            <a href="/admin/dashboard" class="active">Dashboard</a>
+            <a href="/admin/events">Events</a>
+            <a href="#">Templates</a>
+            <a href="#">Users</a>
+            <a href="#">Settings</a>
+            <a href="#">Reports</a>
+        </nav>
+    </aside>
+
+    <div class="admin-main">
+        <header class="admin-topbar">
+            <div>
+                <h1>Dashboard</h1>
+                <p>Overview of recent quality activity and key metrics.</p>
+            </div>
+            <div class="profile-menu">
+                <span>{{ current_user.email }}</span>
+                <button id="themeToggle">Toggle Theme</button>
+            </div>
+        </header>
+
+        <section class="stats-cards">
+            <article>
+                <h3>Total Events</h3>
+                <p>{{ stats.total_events }}</p>
+            </article>
+            <article>
+                <h3>Open Events</h3>
+                <p>{{ stats.open_events }}</p>
+            </article>
+            <article>
+                <h3>Resolved Today</h3>
+                <p>{{ stats.resolved_today }}</p>
+            </article>
+            <article>
+                <h3>Pending Actions</h3>
+                <p>{{ stats.pending_actions }}</p>
+            </article>
+        </section>
+
+        <section class="quick-actions">
+            <button hx-get="/admin/events/create" hx-target="#pageContent" hx-swap="outerHTML">New Event</button>
+            <button hx-get="/admin/events" hx-target="#pageContent" hx-swap="outerHTML">View Events</button>
+            <button hx-get="/api/recent-activity" hx-trigger="click" hx-target="#recentActivity" hx-swap="innerHTML">Refresh Activity</button>
+        </section>
+
+        <section class="recent-activity" id="recentActivity">
+            <h2>Recent Activity</h2>
+            <div class="activity-feed">
+                {% for event in recent_events %}
+                <div class="activity-item">
+                    <strong>{{ event.title }}</strong>
+                    <span>{{ event.status }} / {{ event.priority }}</span>
+                    <time>{{ event.updated_at.strftime('%Y-%m-%d %H:%M') }}</time>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
