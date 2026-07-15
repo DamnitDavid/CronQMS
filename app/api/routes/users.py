@@ -3,18 +3,18 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.auth import get_current_admin_user
+from app.core.permissions import Permission, require_permission
 from app.core.security import hash_password
 from app.database import get_db
 from app.models import User
-from app.schemas.user import CurrentUser, UserCreate, UserResponse
+from app.schemas.user import UserCreate, UserResponse
 
 router = APIRouter(prefix="/api/users", tags=["Users"])
 
 
 @router.get("/", response_model=list[UserResponse])
 async def list_users(
-    current_user: CurrentUser = Depends(get_current_admin_user),
+    current_user: User = Depends(require_permission(Permission.USER_MANAGE)),
     db: Session = Depends(get_db),
 ) -> list[User]:
     return db.query(User).all()
@@ -23,7 +23,7 @@ async def list_users(
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
     user_data: UserCreate,
-    current_user: CurrentUser = Depends(get_current_admin_user),
+    current_user: User = Depends(require_permission(Permission.USER_MANAGE)),
     db: Session = Depends(get_db),
 ) -> User:
     existing_user = db.query(User).filter(User.email == user_data.email).first()
@@ -33,7 +33,8 @@ async def create_user(
     new_user = User(
         email=user_data.email,
         hashed_password=hash_password(user_data.password),
-        role=user_data.role,
+        role=user_data.role.value,
+        organization_id=user_data.organization_id,
         is_active=True,
     )
     db.add(new_user)
@@ -45,7 +46,7 @@ async def create_user(
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(
     user_id: int,
-    current_user: CurrentUser = Depends(get_current_admin_user),
+    current_user: User = Depends(require_permission(Permission.USER_MANAGE)),
     db: Session = Depends(get_db),
 ) -> User:
     user = db.query(User).filter(User.id == user_id).first()
@@ -58,7 +59,7 @@ async def get_user(
 async def update_user(
     user_id: int,
     user_data: UserCreate,
-    current_user: CurrentUser = Depends(get_current_admin_user),
+    current_user: User = Depends(require_permission(Permission.USER_MANAGE)),
     db: Session = Depends(get_db),
 ) -> User:
     user = db.query(User).filter(User.id == user_id).first()
@@ -67,7 +68,8 @@ async def update_user(
 
     user.email = user_data.email
     user.hashed_password = hash_password(user_data.password)
-    user.role = user_data.role
+    user.role = user_data.role.value
+    user.organization_id = user_data.organization_id
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -77,7 +79,7 @@ async def update_user(
 @router.delete("/{user_id}")
 async def delete_user(
     user_id: int,
-    current_user: CurrentUser = Depends(get_current_admin_user),
+    current_user: User = Depends(require_permission(Permission.USER_MANAGE)),
     db: Session = Depends(get_db),
 ) -> dict:
     user = db.query(User).filter(User.id == user_id).first()
@@ -92,7 +94,7 @@ async def delete_user(
 @router.post("/{user_id}/reset-password")
 async def reset_password(
     user_id: int,
-    current_user: CurrentUser = Depends(get_current_admin_user),
+    current_user: User = Depends(require_permission(Permission.USER_MANAGE)),
     db: Session = Depends(get_db),
 ) -> dict:
     user = db.query(User).filter(User.id == user_id).first()

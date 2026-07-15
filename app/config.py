@@ -1,6 +1,7 @@
 """Application configuration and environment variable management."""
 
 import os
+import tempfile
 from typing import Optional
 from functools import lru_cache
 from pydantic_settings import BaseSettings
@@ -34,6 +35,11 @@ class Settings(BaseSettings):
     # Authentication
     password_min_length: int = 8
     session_timeout_minutes: int = 480  # 8 hours
+
+    # Attachments: base directory for the local-disk storage backend. Swap the
+    # backend in app/core/storage.py to move to S3.
+    attachment_storage_dir: str = os.path.join(tempfile.gettempdir(), "proins_attachments")
+    attachment_max_bytes: int = 25 * 1024 * 1024  # 25 MB
 
     class Config:
         """Pydantic config."""

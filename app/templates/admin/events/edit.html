@@ -1,24 +1,99 @@
 {% extends "base.html" %}
 
-{% block title %}Edit Event - Proins Admin{% endblock %}
+{% block title %}Edit {{ event.title }} - Proins{% endblock %}
+
+{% block extra_css %}
+<style>
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+  .form-grid .form-group { margin-bottom: 0; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+  select, input, textarea { width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; font: inherit; }
+  label { display: block; font-weight: 600; margin-bottom: 0.3rem; }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="admin-shell">
-    <aside class="admin-sidebar">
-        <div class="brand">Proins</div>
-        <nav>
-            <a href="/admin/dashboard">Dashboard</a>
-            <a href="/admin/events">Events</a>
-            <a href="#">Users</a>
-        </nav>
-    </aside>
-    <div class="admin-main">
-        <header class="admin-topbar">
-            <h1>Edit Event</h1>
-        </header>
-        <section class="container">
-            <p>Edit view placeholder. Load the event data and submit form to update the record.</p>
-        </section>
-    </div>
+  <aside class="admin-sidebar">
+    <div class="brand">Proins</div>
+    <nav>
+      <a href="/admin/dashboard">Dashboard</a>
+      <a href="/admin/events" class="active">Events</a>
+    </nav>
+  </aside>
+
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <div><h1>Edit Event #{{ event.id }}</h1></div>
+      <a class="button-secondary" href="/admin/events/{{ event.id }}">Cancel</a>
+    </header>
+
+    <form class="card" method="post" action="/admin/events/{{ event.id }}/edit">
+      <div class="form-group">
+        <label for="title">Title</label>
+        <input id="title" name="title" value="{{ event.title }}" required minlength="3">
+      </div>
+
+      <div class="form-group" style="margin-top: 1rem;">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" rows="4">{{ event.description or "" }}</textarea>
+      </div>
+
+      <div class="form-grid" style="margin-top: 1rem;">
+        <div class="form-group">
+          <label for="event_type">Type</label>
+          <select id="event_type" name="event_type">
+            {% for t in ["Non_Conformance", "CAPA", "Audit_Finding", "Other"] %}
+            <option value="{{ t }}" {% if event.event_type == t %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="priority">Priority</label>
+          <select id="priority" name="priority">
+            {% for p in ["Low", "Medium", "High", "Critical"] %}
+            <option value="{{ p }}" {% if event.priority == p %}selected{% endif %}>{{ p }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="assigned_to">Assignee</label>
+          <select id="assigned_to" name="assigned_to">
+            <option value="">Unassigned</option>
+            {% for u in users %}
+            <option value="{{ u.id }}" {% if event.assigned_to == u.id %}selected{% endif %}>{{ u.email }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="site_id">Site</label>
+          <select id="site_id" name="site_id">
+            <option value="">None</option>
+            {% for s in sites %}
+            <option value="{{ s.id }}" {% if event.site_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="target_close_date">Target Close Date</label>
+          <input id="target_close_date" name="target_close_date" type="date"
+                 value="{{ event.target_close_date.isoformat() if event.target_close_date else '' }}">
+        </div>
+      </div>
+
+      <h3 style="margin-top: 1.5rem;">Traceability</h3>
+      <div class="form-grid">
+        <div class="form-group"><label>Part Number</label><input name="product_part_number" value="{{ event.product_part_number or '' }}"></div>
+        <div class="form-group"><label>Lot / Batch</label><input name="lot_batch" value="{{ event.lot_batch or '' }}"></div>
+        <div class="form-group"><label>Supplier</label><input name="supplier" value="{{ event.supplier or '' }}"></div>
+        <div class="form-group"><label>Work Order</label><input name="work_order" value="{{ event.work_order or '' }}"></div>
+        <div class="form-group"><label>Machine</label><input name="machine" value="{{ event.machine or '' }}"></div>
+      </div>
+
+      <div style="margin-top: 1.5rem;">
+        <button class="button-primary" type="submit">Save Changes</button>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}

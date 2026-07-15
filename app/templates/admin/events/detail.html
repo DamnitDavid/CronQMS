@@ -1,24 +1,181 @@
 {% extends "base.html" %}
 
-{% block title %}Event Details - Proins Admin{% endblock %}
+{% block title %}{{ event.title }} - Proins{% endblock %}
+
+{% block extra_css %}
+<style>
+  .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+  .detail-grid .field { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; }
+  .field .label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .field .value { font-weight: 600; margin-top: 0.25rem; }
+  .badge { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600; }
+  .badge.status-Open { background: #dbeafe; color: #1e40af; }
+  .badge.status-In_Progress { background: #fef3c7; color: #92400e; }
+  .badge.status-Resolved { background: #d1fae5; color: #065f46; }
+  .badge.status-Closed { background: #e5e7eb; color: #374151; }
+  .badge.overdue { background: #fee2e2; color: #991b1b; margin-left: 0.5rem; }
+  .action-bar { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+  .action-bar form { display: inline; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+  .banner-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; padding: 0.85rem 1rem; border-radius: 12px; }
+  .thread .comment { border-bottom: 1px solid var(--border); padding: 0.75rem 0; }
+  .thread .comment .meta { color: var(--muted); font-size: 0.8rem; }
+  table.history { width: 100%; border-collapse: collapse; }
+  table.history th, table.history td { text-align: left; padding: 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+  .inline-form { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="admin-shell">
-    <aside class="admin-sidebar">
-        <div class="brand">Proins</div>
-        <nav>
-            <a href="/admin/dashboard">Dashboard</a>
-            <a href="/admin/events">Events</a>
-            <a href="#">Users</a>
-        </nav>
-    </aside>
-    <div class="admin-main">
-        <header class="admin-topbar">
-            <h1>Event Details</h1>
-        </header>
-        <section class="container">
-            <p>Event detail page placeholder. Connect to API to display event values.</p>
-        </section>
-    </div>
+  <aside class="admin-sidebar">
+    <div class="brand">Proins</div>
+    <nav>
+      <a href="/admin/dashboard">Dashboard</a>
+      <a href="/admin/events" class="active">Events</a>
+    </nav>
+  </aside>
+
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <div>
+        <h1>{{ event.title }}</h1>
+        <p>
+          <span class="badge status-{{ event.status }}">{{ event.status }}</span>
+          {% if event.is_overdue %}<span class="badge overdue">Overdue</span>{% endif %}
+          &middot; #{{ event.id }} &middot; {{ event.event_type }} &middot; {{ event.priority }}
+        </p>
+      </div>
+      <div class="profile-menu"><span>{{ current_user.email }}</span></div>
+    </header>
+
+    {% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
+
+    <section class="card action-bar">
+      {% if perms.can_edit %}<a class="button-secondary" href="/admin/events/{{ event.id }}/edit">Edit</a>{% endif %}
+
+      {% if perms.can_change_status and event.status == "Open" %}
+        <form method="post" action="/admin/events/{{ event.id }}/status">
+          <input type="hidden" name="status" value="In_Progress">
+          <button class="button-primary" type="submit">Start Investigation</button>
+        </form>
+      {% endif %}
+      {% if perms.can_change_status and event.status == "In_Progress" %}
+        <form method="post" action="/admin/events/{{ event.id }}/status">
+          <input type="hidden" name="status" value="Resolved">
+          <button class="button-primary" type="submit">Mark Resolved</button>
+        </form>
+      {% endif %}
+      {% if perms.can_change_status and event.status == "Resolved" %}
+        <form method="post" action="/admin/events/{{ event.id }}/status">
+          <input type="hidden" name="status" value="In_Progress">
+          <button class="button-secondary" type="submit">Return to Investigation</button>
+        </form>
+      {% endif %}
+      {% if perms.can_close and event.status == "Resolved" %}
+        <form method="post" action="/admin/events/{{ event.id }}/close">
+          <button class="button-primary" type="submit">Approve &amp; Close</button>
+        </form>
+      {% endif %}
+      {% if perms.can_reopen and event.status == "Closed" %}
+        <form method="post" action="/admin/events/{{ event.id }}/reopen" class="inline-form">
+          <input type="text" name="reason" placeholder="Reason for reopening" required>
+          <button class="button-secondary" type="submit">Reopen</button>
+        </form>
+      {% endif %}
+    </section>
+
+    <section class="detail-grid">
+      <div class="field"><div class="label">Reporter</div><div class="value">{{ user_emails.get(event.reported_by, event.reported_by) }}</div></div>
+      <div class="field"><div class="label">Assignee</div><div class="value">{{ user_emails.get(event.assigned_to, "Unassigned") }}</div></div>
+      <div class="field"><div class="label">Target Close</div><div class="value">{{ event.target_close_date or "—" }}</div></div>
+      <div class="field"><div class="label">Days Open</div><div class="value">{{ event.days_open }}</div></div>
+      <div class="field"><div class="label">Created</div><div class="value">{{ event.created_at.strftime('%Y-%m-%d') }}</div></div>
+      {% if event.closed_at %}
+      <div class="field"><div class="label">Closed By</div><div class="value">{{ user_emails.get(event.closed_by, event.closed_by) }} on {{ event.closed_at.strftime('%Y-%m-%d') }}</div></div>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <h2>Description</h2>
+      <p>{{ event.description or "No description provided." }}</p>
+    </section>
+
+    <section class="card">
+      <h2>Traceability</h2>
+      <div class="detail-grid">
+        <div class="field"><div class="label">Part Number</div><div class="value">{{ event.product_part_number or "—" }}</div></div>
+        <div class="field"><div class="label">Lot / Batch</div><div class="value">{{ event.lot_batch or "—" }}</div></div>
+        <div class="field"><div class="label">Supplier</div><div class="value">{{ event.supplier or "—" }}</div></div>
+        <div class="field"><div class="label">Work Order</div><div class="value">{{ event.work_order or "—" }}</div></div>
+        <div class="field"><div class="label">Machine</div><div class="value">{{ event.machine or "—" }}</div></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Attachments</h2>
+      {% if attachments %}
+        <ul>
+          {% for a in attachments %}
+          <li>
+            <a href="/api/attachments/{{ a.id }}/download">{{ a.filename }}</a>
+            <span style="color: var(--muted);">({{ a.size_bytes }} bytes &middot; sha256 {{ a.checksum[:12] }}…)</span>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p style="color: var(--muted);">No attachments.</p>
+      {% endif %}
+      {% if perms.can_edit %}
+      <form method="post" action="/admin/events/{{ event.id }}/attachments" enctype="multipart/form-data" class="inline-form" style="margin-top: 1rem;">
+        <input type="file" name="file" required>
+        <button class="button-secondary" type="submit">Upload</button>
+      </form>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <h2>Comments</h2>
+      <div class="thread">
+        {% for c in comments %}
+        <div class="comment">
+          <div class="meta">{{ user_emails.get(c.author_id, c.author_id) }} &middot; {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+          <div>{{ c.body }}</div>
+        </div>
+        {% else %}
+        <p style="color: var(--muted);">No comments yet.</p>
+        {% endfor %}
+      </div>
+      {% if perms.can_comment %}
+      <form method="post" action="/admin/events/{{ event.id }}/comments" class="inline-form" style="margin-top: 1rem;">
+        <input type="text" name="body" placeholder="Add a comment…" required style="flex: 1;">
+        <button class="button-primary" type="submit">Post</button>
+      </form>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <h2>Audit History</h2>
+      {% if history %}
+      <table class="history">
+        <thead><tr><th>When</th><th>Field</th><th>From</th><th>To</th><th>Reason</th><th>Actor</th></tr></thead>
+        <tbody>
+          {% for h in history %}
+          <tr>
+            <td>{{ h.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>{{ h.field }}</td>
+            <td>{{ h.old_value if h.old_value is not none else "—" }}</td>
+            <td>{{ h.new_value if h.new_value is not none else "—" }}</td>
+            <td>{{ h.reason or "" }}</td>
+            <td>{{ user_emails.get(h.actor_id, h.actor_id if h.actor_id else "system") }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p style="color: var(--muted);">No history recorded.</p>
+      {% endif %}
+    </section>
+  </div>
 </div>
 {% endblock %}

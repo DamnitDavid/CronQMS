@@ -9,8 +9,7 @@ import os
 
 from app.config import get_settings
 from app.core.auth import get_current_user_optional
-from app.database import init_db
-from app.api.routes import admin, auth, events, pages, users
+from app.api.routes import admin, attachments, auth, capas, comments, events, pages, reports, users
 
 settings = get_settings()
 
@@ -24,10 +23,10 @@ async def lifespan(app: FastAPI):
     Yields:
         None: During normal operation.
     """
-    # Startup event
+    # Startup event. Schema is owned by Alembic migrations (`alembic upgrade
+    # head`), which run before the app process starts in docker-compose, so the
+    # app no longer creates tables itself.
     print(f"Starting {settings.app_name} v{settings.app_version} ({settings.environment})")
-    init_db()
-    print("Database initialized")
 
     yield
 
@@ -60,6 +59,10 @@ if os.path.exists(static_dir):
 # Include routers
 app.include_router(auth.router)
 app.include_router(events.router)
+app.include_router(capas.router)
+app.include_router(attachments.router)
+app.include_router(comments.router)
+app.include_router(reports.router)
 app.include_router(admin.router)
 app.include_router(pages.router)
 app.include_router(users.router)

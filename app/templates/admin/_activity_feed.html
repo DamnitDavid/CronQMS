@@ -1,0 +1,9 @@
+{% for event in recent_events %}
+<a class="activity-item" href="/admin/events/{{ event.id }}">
+    <strong>{{ event.title }}</strong>
+    <span>{{ event.status }} / {{ event.priority }}</span>
+    <time>{{ event.updated_at.strftime('%Y-%m-%d %H:%M') }}</time>
+</a>
+{% else %}
+<p style="color: var(--muted);">No recent activity.</p>
+{% endfor %}
