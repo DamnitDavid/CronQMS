@@ -23,6 +23,7 @@ class Permission(str, Enum):
     EVENT_CHANGE_STATUS = "event:change_status"
     EVENT_APPROVE_CLOSURE = "event:approve_closure"
     EVENT_REOPEN = "event:reopen"
+    EVENT_COMMENT = "event:comment"
     CAPA_CREATE = "capa:create"
     CAPA_READ = "capa:read"
     CAPA_UPDATE = "capa:update"
@@ -43,6 +44,7 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.EVENT_CHANGE_STATUS,
         Permission.EVENT_APPROVE_CLOSURE,
         Permission.EVENT_REOPEN,
+        Permission.EVENT_COMMENT,
         Permission.CAPA_CREATE,
         Permission.CAPA_READ,
         Permission.CAPA_UPDATE,
@@ -54,6 +56,7 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.EVENT_READ,
         Permission.EVENT_UPDATE,
         Permission.EVENT_CHANGE_STATUS,
+        Permission.EVENT_COMMENT,
         Permission.CAPA_CREATE,
         Permission.CAPA_READ,
         Permission.CAPA_UPDATE,
@@ -63,6 +66,7 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.EVENT_READ,
         Permission.EVENT_CHANGE_STATUS,
         Permission.EVENT_APPROVE_CLOSURE,
+        Permission.EVENT_COMMENT,
         Permission.CAPA_READ,
         Permission.CAPA_VERIFY,
         Permission.DASHBOARD_VIEW,
