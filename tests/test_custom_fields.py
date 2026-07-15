@@ -48,10 +48,15 @@ class CustomFieldsTest(unittest.TestCase):
         if os.path.exists(db_path):
             os.remove(db_path)
 
-    def _add_field(self, label, field_type, event_type="Non_Conformance"):
+    def _add_field(self, label, field_type, event_type="Non_Conformance", options=""):
         return self.client.post(
             "/admin/settings/custom-fields",
-            data={"event_type": event_type, "label": label, "field_type": field_type},
+            data={
+                "event_type": event_type,
+                "label": label,
+                "field_type": field_type,
+                "options": options,
+            },
             follow_redirects=False,
         )
 
@@ -75,7 +80,52 @@ class CustomFieldsTest(unittest.TestCase):
         frag = self.client.get("/admin/events/custom-fields?event_type=Non_Conformance")
         self.assertEqual(frag.status_code, 200)
         self.assertIn(f"cf_{fid}", frag.text)
-        self.assertIn("Custom Information", frag.text)
+
+    def test_fragment_is_inline_not_boxed(self):
+        # The fields render inline in the main form, not inside a boxed sub-form.
+        self._add_field("Root cause code", "text")
+        frag = self.client.get("/admin/events/custom-fields?event_type=Non_Conformance")
+        self.assertNotIn('class="card"', frag.text)
+        self.assertNotIn("Custom Information", frag.text)
+
+    def test_select_field_renders_dropdown_with_options(self):
+        self._add_field("Customer", "select", options="Acme Corp\nGlobex\nInitech")
+        fid = self._field_id("Customer")
+        frag = self.client.get("/admin/events/custom-fields?event_type=Non_Conformance")
+        self.assertIn(f'<select id="cf_{fid}"', frag.text)
+        for opt in ("Acme Corp", "Globex", "Initech"):
+            self.assertIn(opt, frag.text)
+
+    def test_select_requires_options(self):
+        r = self._add_field("Customer", "select", options="   ")
+        self.assertEqual(r.status_code, 303)
+        self.assertIn("error", r.headers["location"])
+        db = SessionLocal()
+        try:
+            self.assertEqual(db.query(CustomField).count(), 0)
+        finally:
+            db.close()
+
+    def test_select_value_must_be_in_options(self):
+        self._add_field("Customer", "select", options="Acme Corp\nGlobex")
+        fid = self._field_id("Customer")
+        # Valid choice persists.
+        ok = self.client.post(
+            "/admin/events/create",
+            data={"title": "Valid pick", "event_type": "Non_Conformance",
+                  "priority": "Low", f"cf_{fid}": "Globex"},
+        )
+        self.assertEqual(ok.status_code, 200)
+        self.assertIn("Globex", ok.text)
+        # Out-of-list value is rejected.
+        bad = self.client.post(
+            "/admin/events/create",
+            data={"title": "Bad pick", "event_type": "Non_Conformance",
+                  "priority": "Low", f"cf_{fid}": "Umbrella Corp"},
+            follow_redirects=False,
+        )
+        self.assertEqual(bad.status_code, 303)
+        self.assertIn("error", bad.headers["location"])
 
     def test_fields_are_scoped_to_event_type(self):
         self._add_field("NC only", "text", event_type="Non_Conformance")

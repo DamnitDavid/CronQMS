@@ -31,6 +31,11 @@
         <textarea id="description" name="description" rows="4">{{ event.description or "" }}</textarea>
     </div>
 
+    <!-- Type-specific company fields, inline in the form -->
+    <div id="custom-fields">
+        {% include "admin/events/_custom_fields.html" %}
+    </div>
+
     <div class="form-grid">
         <div class="form-group">
             <label for="priority">Priority</label>
@@ -72,10 +77,6 @@
         <div class="form-group"><label>Supplier</label><input name="supplier" value="{{ event.supplier or '' }}"></div>
         <div class="form-group"><label>Work Order</label><input name="work_order" value="{{ event.work_order or '' }}"></div>
         <div class="form-group"><label>Machine</label><input name="machine" value="{{ event.machine or '' }}"></div>
-    </div>
-
-    <div id="custom-fields">
-        {% include "admin/events/_custom_fields.html" %}
     </div>
 
     <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem;">

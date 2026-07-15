@@ -35,6 +35,13 @@ def values_for(db: Session, event_id: int) -> dict[int, str]:
     return {row.custom_field_id: row.value for row in rows}
 
 
+def field_options(field: CustomField) -> list[str]:
+    """Allowed values for a ``select`` field (one per line), blanks dropped."""
+    if not field.options:
+        return []
+    return [line.strip() for line in field.options.splitlines() if line.strip()]
+
+
 def slugify_key(label: str) -> str:
     """Derive a stable snake_case key from a human label."""
     slug = re.sub(r"[^a-z0-9]+", "_", label.strip().lower()).strip("_")
@@ -79,6 +86,11 @@ def _coerce(field: CustomField, raw) -> tuple[str | None, str | None]:
             float(text)
         except ValueError:
             return None, f"{field.label} must be a number."
+        return text, None
+
+    if field.field_type == CustomFieldType.SELECT.value:
+        if text not in field_options(field):
+            return None, f"{field.label} must be one of the allowed options."
         return text, None
 
     return text, None

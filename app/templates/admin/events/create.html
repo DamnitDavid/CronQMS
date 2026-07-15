@@ -30,6 +30,12 @@
         <label for="description">Description</label>
         <textarea id="description" name="description"></textarea>
     </div>
+
+    <!-- Type-specific company fields, inline in the form -->
+    <div id="custom-fields">
+        {% include "admin/events/_custom_fields.html" %}
+    </div>
+
     <div class="form-grid">
         <div class="form-group">
             <label for="priority">Priority</label>
@@ -62,10 +68,6 @@
             <label for="lot_batch">Lot / Batch</label>
             <input type="text" id="lot_batch" name="lot_batch">
         </div>
-    </div>
-
-    <div id="custom-fields">
-        {% include "admin/events/_custom_fields.html" %}
     </div>
 
     <p class="field-hint" style="margin-top: 1rem;">Target close date is derived from priority SLA if left unset.</p>

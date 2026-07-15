@@ -21,6 +21,7 @@ class CustomFieldType(str, Enum):
     TEXT = "text"
     NUMBER = "number"
     BOOLEAN = "boolean"
+    SELECT = "select"
 
 
 class CustomField(Base):
@@ -32,6 +33,8 @@ class CustomField(Base):
         label: Human label shown on the form and detail view.
         key: Slug derived from ``label``, unique per (organization, event_type).
         field_type: One of :class:`CustomFieldType` values.
+        options: Newline-separated allowed values for ``select`` fields; null
+            for other types.
         display_order: Ascending sort order on the form.
         is_active: Soft-delete flag; inactive fields are hidden everywhere.
     """
@@ -46,6 +49,7 @@ class CustomField(Base):
     label = Column(String(255), nullable=False)
     key = Column(String(100), nullable=False)
     field_type = Column(String(20), nullable=False, default=CustomFieldType.TEXT.value)
+    options = Column(Text, nullable=True)
     display_order = Column(Integer, nullable=False, default=0)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

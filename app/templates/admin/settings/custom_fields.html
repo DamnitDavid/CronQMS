@@ -37,7 +37,12 @@
                 {% if fields %}
                     {% for field in fields %}
                     <tr>
-                        <td>{{ field.label }}</td>
+                        <td>
+                            {{ field.label }}
+                            {% if field.field_type == "select" and field.options %}
+                            <div class="field-hint" style="margin-top: 0.2rem;">Options: {{ field.options.split("\n") | join(", ") }}</div>
+                            {% endif %}
+                        </td>
                         <td><code>{{ field.key }}</code></td>
                         <td><span class="badge cf-{{ field.field_type }}">{{ field.field_type }}</span></td>
                         <td>
@@ -73,6 +78,11 @@
                     {% endfor %}
                 </select>
             </div>
+        </div>
+        <div class="form-group" style="margin-top: 1rem;">
+            <label for="options">Dropdown options</label>
+            <textarea id="options" name="options" rows="3" placeholder="One per line, e.g.&#10;Acme Corp&#10;Globex&#10;Initech"></textarea>
+            <small>One per line. Used only for the <strong>select</strong> (dropdown) type; ignored otherwise.</small>
         </div>
         <div style="margin-top: 1rem;">
             <button class="button-primary" type="submit">Add field</button>

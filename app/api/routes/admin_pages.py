@@ -85,6 +85,7 @@ async def custom_field_create(
     event_type: str = Form(...),
     label: str = Form(...),
     field_type: str = Form(...),
+    options: str = Form(""),
 ):
     if event_type not in EVENT_TYPES:
         return _settings_redirect(EventType.NON_CONFORMANCE.value, "Unknown event type.")
@@ -94,6 +95,13 @@ async def custom_field_create(
     if field_type not in FIELD_TYPES:
         return _settings_redirect(event_type, "Unknown field type.")
 
+    option_lines = [line.strip() for line in options.splitlines() if line.strip()]
+    stored_options = None
+    if field_type == CustomFieldType.SELECT.value:
+        if not option_lines:
+            return _settings_redirect(event_type, "Dropdown fields need at least one option.")
+        stored_options = "\n".join(option_lines)
+
     order = len(fields_for(db, current_user.organization_id, event_type))
     db.add(
         CustomField(
@@ -102,6 +110,7 @@ async def custom_field_create(
             label=label,
             key=unique_key(db, current_user.organization_id, event_type, label),
             field_type=field_type,
+            options=stored_options,
             display_order=order,
             is_active=True,
         )
