@@ -28,7 +28,7 @@ class EventCreate(BaseModel):
     event_type: EventType = EventType.NON_CONFORMANCE
     priority: EventPriority = EventPriority.MEDIUM
     assigned_to: Optional[int] = None
-    facility: Optional[str] = Field(default=None, max_length=255)
+    site_id: Optional[int] = None
 
 
 class EventUpdate(BaseModel):
@@ -40,7 +40,7 @@ class EventUpdate(BaseModel):
     status: Optional[EventStatus] = None
     priority: Optional[EventPriority] = None
     assigned_to: Optional[int] = None
-    facility: Optional[str] = Field(default=None, max_length=255)
+    site_id: Optional[int] = None
 
     @field_validator("title")
     @classmethod
@@ -66,8 +66,9 @@ class EventResponse(BaseModel):
     status: EventStatus
     priority: EventPriority
     assigned_to: Optional[int]
-    facility: Optional[str]
-    user_id: int
+    organization_id: int
+    site_id: Optional[int]
+    reported_by: int
     is_active: bool
     created_at: datetime
     updated_at: datetime

@@ -6,9 +6,10 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from app.core.auth import get_current_user_optional, get_current_admin_user
+from app.core.auth import get_current_user_optional
+from app.core.permissions import Permission, require_permission
 from app.database import get_db
-from app.models import Event
+from app.models import Event, User
 
 router = APIRouter(tags=["Pages"])
 
@@ -36,12 +37,12 @@ async def register_page(request: Request):
 @router.get("/admin/events")
 async def admin_events_page(
     request: Request,
-    current_user=Depends(get_current_admin_user),
+    current_user: User = Depends(require_permission(Permission.EVENT_READ)),
     db: Session = Depends(get_db),
 ):
     events = (
         db.query(Event)
-        .filter(Event.is_active.is_(True))
+        .filter(Event.organization_id == current_user.organization_id, Event.is_active.is_(True))
         .order_by(Event.updated_at.desc())
         .limit(50)
         .all()
@@ -55,7 +56,7 @@ async def admin_events_page(
 @router.get("/admin/events/create")
 async def admin_events_create_page(
     request: Request,
-    current_user=Depends(get_current_admin_user),
+    current_user: User = Depends(require_permission(Permission.EVENT_CREATE)),
 ):
     return templates.TemplateResponse(
         "admin/events/create.html",

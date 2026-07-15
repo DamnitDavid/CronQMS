@@ -41,13 +41,19 @@ class Event(Base):
     status = Column(String(30), nullable=False, default=EventStatus.OPEN.value)
     priority = Column(String(20), nullable=False, default=EventPriority.MEDIUM.value)
     assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True)
-    facility = Column(String(255), nullable=True)
+    organization_id = Column(
+        Integer, ForeignKey("organizations.id"), nullable=False, index=True
+    )
+    site_id = Column(Integer, ForeignKey("sites.id"), nullable=True, index=True)
     is_active = Column(Boolean, default=True, nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    reported_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     assigned_user = relationship("User", foreign_keys=[assigned_to], lazy="joined")
+    reporter = relationship("User", foreign_keys=[reported_by], lazy="joined")
+    organization = relationship("Organization")
+    site = relationship("Site")
 
     def __repr__(self) -> str:
         """String representation of Event."""

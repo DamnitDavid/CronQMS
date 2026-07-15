@@ -69,16 +69,6 @@ async def get_current_user_optional(
     return db.query(User).filter(User.email == email).first()
 
 
-async def get_current_admin_user(current_user: User = Depends(get_current_user)):
-    """Ensure the current user has admin privileges."""
-    if getattr(current_user, "role", "Viewer") != "Admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin privileges required",
-        )
-    return current_user
-
-
 async def authenticate_user(db: Session, email: str, password: str) -> User | None:
     """Authenticate a user by email and password."""
     user = db.query(User).filter(User.email == email).first()

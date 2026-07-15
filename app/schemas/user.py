@@ -1,7 +1,11 @@
 """Pydantic schemas for user-related requests and responses."""
 
 from datetime import datetime
+from typing import Optional
+
 from pydantic import BaseModel, EmailStr, field_validator
+
+from app.models.user import Role
 
 
 class UserCreate(BaseModel):
@@ -9,7 +13,8 @@ class UserCreate(BaseModel):
 
     email: EmailStr
     password: str
-    role: str = "Viewer"
+    role: Role = Role.VIEWER
+    organization_id: Optional[int] = None
 
     @field_validator("password")
     @classmethod
@@ -43,6 +48,7 @@ class UserResponse(BaseModel):
     id: int
     email: str
     role: str
+    organization_id: Optional[int]
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -59,6 +65,7 @@ class CurrentUser(BaseModel):
     id: int
     email: str
     role: str
+    organization_id: Optional[int]
     is_active: bool
 
     class Config:
