@@ -4,6 +4,7 @@ from app.models.user import User, Role
 from app.models.organization import Organization, Site
 from app.models.event import Event
 from app.models.capa import Capa, CapaStatus, VerificationOutcome, capa_events
+from app.models.attachment import Attachment
 from app.models.event_history import EventHistory
 
 # Wire the audit choke point once, after the models are defined. CAPAs are
@@ -23,5 +24,6 @@ __all__ = [
     "CapaStatus",
     "VerificationOutcome",
     "capa_events",
+    "Attachment",
     "EventHistory",
 ]
