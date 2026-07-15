@@ -9,6 +9,7 @@
     <a href="/admin/alerts">Alerts</a> &middot; {{ alert.reference }} &middot; {{ alert.alert_type }}
     &middot; <span class="badge status-{{ alert.status }}">{{ alert.status }}</span>
     &middot; <span class="badge prio-{{ alert.severity }}">{{ alert.severity }}</span>
+    {% if alert.is_expired %}&middot; <span class="badge overdue">Expired</span>{% endif %}
 </div>
 {% endblock %}
 
@@ -16,7 +17,8 @@
 {% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
 
 <section class="card action-bar">
-    <a class="button-secondary" href="/admin/alerts/{{ alert.id }}/print" target="_blank" rel="noopener">Print / Signature Page</a>
+    <a class="button-secondary" href="/admin/alerts/{{ alert.id }}/print" target="_blank" rel="noopener">Print Alert (signage)</a>
+    <a class="button-secondary" href="/admin/alerts/{{ alert.id }}/signoff" target="_blank" rel="noopener">Print blank sign-off</a>
     {% if perms.can_close and alert.status != "Closed" %}
     <form method="post" action="/admin/alerts/{{ alert.id }}/close">
         <button class="button-primary" type="submit">Close Alert</button>
@@ -27,10 +29,15 @@
 <section class="detail-grid">
     <div class="field"><div class="label">Reference</div><div class="value">{{ alert.reference }}</div></div>
     <div class="field"><div class="label">Source Event</div><div class="value">
-        <a href="/admin/events/{{ alert.event_id }}">#{{ alert.event_id }} {{ alert.event.title }}</a>
+        {%- if alert.event_id and alert.event -%}
+            <a href="/admin/events/{{ alert.event_id }}">#{{ alert.event_id }} {{ alert.event.title }}</a>
+        {%- else -%}
+            N/A
+        {%- endif -%}
     </div></div>
     <div class="field"><div class="label">Issued By</div><div class="value">{{ user_emails.get(alert.issued_by, alert.issued_by) }}</div></div>
     <div class="field"><div class="label">Response Due</div><div class="value">{{ alert.response_due_date or "—" }}</div></div>
+    <div class="field"><div class="label">Expires On</div><div class="value">{{ alert.expires_at or "—" }}{% if alert.is_expired %} <span class="muted">(expired)</span>{% endif %}</div></div>
     <div class="field"><div class="label">Affected Product</div><div class="value">{{ alert.affected_product or "—" }}</div></div>
     <div class="field"><div class="label">Affected Lot / Batch</div><div class="value">{{ alert.affected_lot_batch or "—" }}</div></div>
     <div class="field"><div class="label">Issued</div><div class="value">{{ alert.created_at.strftime('%Y-%m-%d') }}</div></div>
@@ -49,6 +56,39 @@
 <section class="card">
     <h2>Required Actions for Recipients</h2>
     <p>{{ alert.required_actions or "—" }}</p>
+</section>
+
+<section class="card">
+    <h2>Photos</h2>
+    {% set images_by_pos = {} %}
+    {% for img in alert.images %}{% set _ = images_by_pos.update({img.position: img}) %}{% endfor %}
+    <div class="photo-grid">
+        {% for pos in [1, 2] %}
+        <div class="photo-slot">
+            <div class="photo-slot-label">Photo {{ pos }}</div>
+            {% if images_by_pos.get(pos) %}
+            {% set img = images_by_pos.get(pos) %}
+            <img class="photo-thumb" src="/api/alert-images/{{ img.id }}" alt="Alert photo {{ pos }}">
+            {% if perms.can_create %}
+            <div class="photo-actions">
+                <button type="button" class="button-secondary button-sm"
+                        onclick="AlertImageEditor.open({{ alert.id }}, {{ pos }})">Replace / edit</button>
+                <form method="post" action="/admin/alerts/{{ alert.id }}/images/{{ img.id }}/delete"
+                      onsubmit="return confirm('Remove photo {{ pos }}?');" style="display:inline;">
+                    <button type="submit" class="button-secondary button-sm">Remove</button>
+                </form>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="photo-empty muted">No photo</div>
+            {% if perms.can_create %}
+            <button type="button" class="button-secondary button-sm"
+                    onclick="AlertImageEditor.open({{ alert.id }}, {{ pos }})">Add photo</button>
+            {% endif %}
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
 </section>
 
 <section class="card">
@@ -100,4 +140,34 @@
     </form>
     {% endif %}
 </section>
+
+{% if perms.can_create %}
+<!-- Image editor overlay (rotate / crop / annotate) -->
+<div id="imgEditorOverlay" class="img-editor-overlay" hidden>
+    <div class="img-editor">
+        <div class="img-editor-head">
+            <strong>Edit Photo <span id="imgEditorPos"></span></strong>
+            <button type="button" class="button-secondary button-sm" onclick="AlertImageEditor.close()">Close</button>
+        </div>
+        <div class="img-editor-toolbar">
+            <label class="button-secondary button-sm">
+                Choose image<input type="file" id="imgEditorFile" accept="image/*" hidden>
+            </label>
+            <button type="button" class="button-secondary button-sm" data-act="rotate">Rotate 90°</button>
+            <button type="button" class="button-secondary button-sm" data-act="crop">Crop</button>
+            <button type="button" class="button-secondary button-sm" data-act="annotate">Annotate</button>
+            <button type="button" class="button-secondary button-sm" data-act="reset">Reset</button>
+            <span class="muted" id="imgEditorMode">mode: view</span>
+        </div>
+        <div class="img-editor-canvas-wrap">
+            <canvas id="imgEditorCanvas"></canvas>
+        </div>
+        <div class="img-editor-foot">
+            <button type="button" class="button-primary" data-act="save" disabled id="imgEditorSave">Save photo</button>
+            <span class="muted">Drag on the image to crop or to draw an annotation.</span>
+        </div>
+    </div>
+</div>
+<script src="/static/js/image_editor.js"></script>
+{% endif %}
 {% endblock %}

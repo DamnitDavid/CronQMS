@@ -1,7 +1,7 @@
 """SQLAlchemy models for Proins."""
 
 from app.models.user import User, Role
-from app.models.organization import Organization, Site
+from app.models.organization import Organization, Site, OrgSetting
 from app.models.event import Event
 from app.models.capa import Capa, CapaStatus, VerificationOutcome, capa_events
 from app.models.attachment import Attachment
@@ -12,6 +12,7 @@ from app.models.assignee_group import AssigneeGroup, assignee_group_members
 from app.models.alert import (
     Alert,
     AlertAcknowledgement,
+    AlertImage,
     AlertSeverity,
     AlertStatus,
     AlertType,
@@ -32,6 +33,7 @@ __all__ = [
     "Role",
     "Organization",
     "Site",
+    "OrgSetting",
     "Event",
     "Capa",
     "CapaStatus",
@@ -47,6 +49,7 @@ __all__ = [
     "assignee_group_members",
     "Alert",
     "AlertAcknowledgement",
+    "AlertImage",
     "AlertType",
     "AlertSeverity",
     "AlertStatus",

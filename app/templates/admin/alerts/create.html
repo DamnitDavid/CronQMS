@@ -6,17 +6,22 @@
 {% block page_heading %}
 <h1>Create Quality/Safety Alert</h1>
 <div class="crumb">
+    {% if event %}
     <a href="/admin/events/{{ event.id }}">Event #{{ event.id }}</a> &middot; {{ event.title }}
+    {% else %}
+    <a href="/admin/alerts">Alerts</a> &middot; Standalone (no source event)
+    {% endif %}
 </div>
 {% endblock %}
 
 {% block admin_content %}
 {% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
 
-<form class="card" method="post" action="/admin/events/{{ event.id }}/alerts" style="max-width: 820px;">
+<form class="card" method="post" action="{{ form_action }}" style="max-width: 820px;">
     <div class="form-group">
         <label for="title">Alert Title</label>
-        <input type="text" id="title" name="title" required minlength="3" value="{{ event.title }}">
+        <input type="text" id="title" name="title" required minlength="3"
+               value="{{ event.title if event else '' }}">
     </div>
 
     <div class="form-grid">
@@ -39,22 +44,27 @@
         <div class="form-group">
             <label for="affected_product">Affected Product / Part</label>
             <input type="text" id="affected_product" name="affected_product"
-                   value="{{ event.product_part_number or '' }}">
+                   value="{{ event.product_part_number or '' if event else '' }}">
         </div>
         <div class="form-group">
             <label for="affected_lot_batch">Affected Lot / Batch</label>
             <input type="text" id="affected_lot_batch" name="affected_lot_batch"
-                   value="{{ event.lot_batch or '' }}">
+                   value="{{ event.lot_batch or '' if event else '' }}">
         </div>
         <div class="form-group">
             <label for="response_due_date">Response Due Date</label>
             <input type="date" id="response_due_date" name="response_due_date">
         </div>
+        <div class="form-group">
+            <label for="expires_at">Expires On</label>
+            <input type="date" id="expires_at" name="expires_at" value="{{ default_expiry }}">
+            <small>Defaults to the org's configured expiry. Adjust as needed.</small>
+        </div>
     </div>
 
     <div class="form-group">
         <label for="description">Description of Issue</label>
-        <textarea id="description" name="description">{{ event.description or '' }}</textarea>
+        <textarea id="description" name="description">{{ event.description or '' if event else '' }}</textarea>
     </div>
     <div class="form-group">
         <label for="containment_actions">Immediate / Containment Actions</label>
@@ -80,9 +90,11 @@
         {% endif %}
     </div>
 
+    <p class="muted" style="margin-top: 0.5rem;">You can attach photos on the alert page after it is created.</p>
+
     <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
         <button class="button-primary" type="submit" {% if not groups %}disabled{% endif %}>Issue Alert</button>
-        <a class="button-secondary" href="/admin/events/{{ event.id }}">Cancel</a>
+        <a class="button-secondary" href="{{ cancel_url }}">Cancel</a>
     </div>
 </form>
 {% endblock %}

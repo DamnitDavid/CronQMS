@@ -23,6 +23,7 @@ from app.models.custom_field import CustomFieldType
 from app.models.event import EventType
 from app.models.user import Role
 from app.services.custom_fields import fields_for, unique_key
+from app.services import org_settings
 
 router = APIRouter(tags=["Admin"])
 
@@ -51,6 +52,58 @@ async def settings_home(
     current_user: User = Depends(require_permission(Permission.SETTINGS_MANAGE)),
 ):
     return RedirectResponse("/admin/settings/custom-fields", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# --- Settings: Config (org-wide toggles) -----------------------------------
+@router.get("/admin/settings/config")
+async def config_page(
+    request: Request,
+    current_user: User = Depends(require_permission(Permission.SETTINGS_MANAGE)),
+    db: Session = Depends(get_db),
+    error: Optional[str] = None,
+    saved: Optional[str] = None,
+):
+    org_id = current_user.organization_id
+    return templates.TemplateResponse(
+        "admin/settings/config.html",
+        {
+            "request": request,
+            "current_user": current_user,
+            "allow_standalone_alerts": org_settings.standalone_alerts_enabled(db, org_id),
+            "default_expiry_days": org_settings.default_expiry_days(db, org_id),
+            "error": error,
+            "saved": saved,
+        },
+    )
+
+
+@router.post("/admin/settings/config")
+async def config_save(
+    current_user: User = Depends(require_permission(Permission.SETTINGS_MANAGE)),
+    db: Session = Depends(get_db),
+    allow_standalone_alerts: Optional[str] = Form(None),
+    default_expiry_days: str = Form(...),
+):
+    org_id = current_user.organization_id
+    # Checkbox: present ("on") when checked, absent otherwise.
+    org_settings.set_setting(
+        db, org_id, org_settings.KEY_ALLOW_STANDALONE,
+        "true" if allow_standalone_alerts else "false",
+    )
+    try:
+        days = int(default_expiry_days)
+    except (TypeError, ValueError):
+        days = 0
+    if days <= 0:
+        return RedirectResponse(
+            "/admin/settings/config?error=" + quote("Default expiry must be a positive number of days."),
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+    org_settings.set_setting(db, org_id, org_settings.KEY_DEFAULT_EXPIRY_DAYS, str(days))
+    db.commit()
+    return RedirectResponse(
+        "/admin/settings/config?saved=1", status_code=status.HTTP_303_SEE_OTHER
+    )
 
 
 @router.get("/admin/settings/custom-fields")
