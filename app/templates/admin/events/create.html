@@ -1,79 +1,64 @@
-{% extends "base.html" %}
+{% extends "base_admin.html" %}
 
-{% block title %}Create Event - Proins Admin{% endblock %}
+{% block title %}Create Event{% endblock %}
+{% set active_nav = "events" %}
 
-{% block content %}
-<div class="admin-shell">
-    <aside class="admin-sidebar">
-        <div class="brand">Proins</div>
-        <nav>
-            <a href="/admin/dashboard">Dashboard</a>
-            <a href="/admin/events" class="active">Events</a>
-            <a href="#">Users</a>
-            <a href="#">Reports</a>
-        </nav>
-    </aside>
-    <div class="admin-main">
-        <header class="admin-topbar">
-            <div>
-                <h1>Create Event</h1>
-            </div>
-        </header>
-
-        <section class="container">
-            <form id="createEventForm" method="post" action="/admin/events/create">
-                <div class="form-group">
-                    <label for="title">Title</label>
-                    <input type="text" id="title" name="title" required minlength="3">
-                </div>
-                <div class="form-group">
-                    <label for="description">Description</label>
-                    <textarea id="description" name="description"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="event_type">Event Type</label>
-                    <select id="event_type" name="event_type">
-                        <option>Non_Conformance</option>
-                        <option>CAPA</option>
-                        <option>Audit_Finding</option>
-                        <option>Other</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="priority">Priority</label>
-                    <select id="priority" name="priority">
-                        <option>Medium</option>
-                        <option>Low</option>
-                        <option>High</option>
-                        <option>Critical</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="assigned_to">Assignee</label>
-                    <select id="assigned_to" name="assigned_to">
-                        <option value="">Unassigned</option>
-                        {% for u in users %}
-                        <option value="{{ u.id }}">{{ u.email }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="site_id">Site</label>
-                    <select id="site_id" name="site_id">
-                        <option value="">None</option>
-                        {% for s in sites %}
-                        <option value="{{ s.id }}">{{ s.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="lot_batch">Lot / Batch</label>
-                    <input type="text" id="lot_batch" name="lot_batch">
-                </div>
-                <p style="color: var(--muted);">Target close date is derived from priority SLA if left unset.</p>
-                <button class="button-primary" type="submit">Create Event</button>
-            </form>
-        </section>
+{% block admin_content %}
+<form id="createEventForm" class="card" method="post" action="/admin/events/create" style="max-width: 760px;">
+    <div class="form-group">
+        <label for="title">Title</label>
+        <input type="text" id="title" name="title" required minlength="3">
     </div>
-</div>
+    <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" name="description"></textarea>
+    </div>
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="event_type">Event Type</label>
+            <select id="event_type" name="event_type">
+                <option>Non_Conformance</option>
+                <option>CAPA</option>
+                <option>Audit_Finding</option>
+                <option>Other</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="priority">Priority</label>
+            <select id="priority" name="priority">
+                <option>Medium</option>
+                <option>Low</option>
+                <option>High</option>
+                <option>Critical</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="assigned_to">Assignee</label>
+            <select id="assigned_to" name="assigned_to">
+                <option value="">Unassigned</option>
+                {% for u in users %}
+                <option value="{{ u.id }}">{{ u.email }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="site_id">Site</label>
+            <select id="site_id" name="site_id">
+                <option value="">None</option>
+                {% for s in sites %}
+                <option value="{{ s.id }}">{{ s.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="lot_batch">Lot / Batch</label>
+            <input type="text" id="lot_batch" name="lot_batch">
+        </div>
+    </div>
+    <p class="field-hint" style="margin-top: 1rem;">Target close date is derived from priority SLA if left unset.</p>
+    <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+        <button class="button-primary" type="submit">Create Event</button>
+        <a class="button-secondary" href="/admin/events">Cancel</a>
+    </div>
+</form>
 {% endblock %}

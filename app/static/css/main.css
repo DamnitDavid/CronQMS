@@ -1,52 +1,308 @@
+/* ==========================================================================
+   Proins design system
+   An enterprise "app shell" style (fixed sidebar + top shell bar, dense data
+   tables) with a light and dark theme. Tokens drive everything; the dark theme
+   is a token override applied via [data-theme="dark"] (with a .dark-mode alias
+   for the JS toggle).
+   ========================================================================== */
+
 :root {
-    --bg: #f5f7fb;
+    /* Surfaces & text */
+    --bg: #eef1f6;
     --surface: #ffffff;
-    --text: #1f2937;
-    --muted: #6b7280;
+    --surface-2: #f7f9fc;
+    --sidebar-bg: #0f1b2d;
+    --sidebar-text: #c3ccdb;
+    --sidebar-text-muted: #7d8aa1;
+    --sidebar-active-bg: rgba(56, 130, 246, 0.16);
+    --sidebar-active-text: #ffffff;
+    --shellbar-bg: #ffffff;
+
+    --text: #1f2733;
+    --muted: #64707f;
+    --heading: #0f1b2d;
+
+    /* Brand */
     --primary: #1d4ed8;
-    --primary-hover: #1e40af;
-    --border: #e5e7eb;
-    --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-    --radius: 16px;
+    --primary-hover: #1a44be;
+    --primary-soft: #e6edfd;
+
+    /* Lines & elevation */
+    --border: #e2e7ef;
+    --border-strong: #cdd5e1;
+    --shadow-sm: 0 1px 2px rgba(15, 27, 45, 0.06);
+    --shadow: 0 6px 20px rgba(15, 27, 45, 0.08);
+    --shadow-lg: 0 18px 44px rgba(15, 27, 45, 0.14);
+
+    /* Semantic status */
+    --ok: #067647;
+    --ok-soft: #d1fae5;
+    --warn: #92400e;
+    --warn-soft: #fef3c7;
+    --info: #1e40af;
+    --info-soft: #dbeafe;
+    --danger: #b42318;
+    --danger-soft: #fee2e2;
+    --neutral: #374151;
+    --neutral-soft: #e5e7eb;
+
+    /* Shape & rhythm */
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-pill: 999px;
+    --sidebar-w: 248px;
+    --shellbar-h: 60px;
+    --font: "Segoe UI", Roboto, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
+}
+
+:root[data-theme="dark"],
+:root.dark-mode {
+    --bg: #0b1220;
+    --surface: #131c2b;
+    --surface-2: #0f1826;
+    --sidebar-bg: #080d17;
+    --sidebar-text: #aab4c5;
+    --sidebar-text-muted: #6b7688;
+    --sidebar-active-bg: rgba(56, 130, 246, 0.22);
+    --sidebar-active-text: #ffffff;
+    --shellbar-bg: #131c2b;
+
+    --text: #e4e9f1;
+    --muted: #97a2b4;
+    --heading: #f2f5fa;
+
+    --primary: #4f83f6;
+    --primary-hover: #6b98f8;
+    --primary-soft: #17274a;
+
+    --border: #24314a;
+    --border-strong: #33425e;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.55);
+
+    --ok: #4ade80;
+    --ok-soft: #0d3b25;
+    --warn: #fbbf24;
+    --warn-soft: #3a2c08;
+    --info: #93b4fb;
+    --info-soft: #16264a;
+    --danger: #f87171;
+    --danger-soft: #3a1512;
+    --neutral: #cbd5e1;
+    --neutral-soft: #24314a;
 }
 
 * {
     box-sizing: border-box;
 }
 
+html,
 body {
     margin: 0;
+    padding: 0;
+}
+
+body {
     min-height: 100vh;
-    font-family: Inter, system-ui, sans-serif;
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.55;
     color: var(--text);
     background: var(--bg);
+    -webkit-font-smoothing: antialiased;
 }
+
+h1, h2, h3, h4 {
+    color: var(--heading);
+    line-height: 1.25;
+    margin: 0 0 0.5rem;
+}
+
+h1 { font-size: 1.4rem; }
+h2 { font-size: 1.15rem; }
+h3 { font-size: 1rem; }
 
 a {
     color: var(--primary);
     text-decoration: none;
 }
 
-button {
-    border: none;
-    border-radius: 999px;
-    padding: 0.85rem 1.4rem;
-    cursor: pointer;
-    font-weight: 600;
+a:hover {
+    text-decoration: underline;
 }
 
+p { margin: 0 0 0.75rem; }
+
+/* --- Buttons -------------------------------------------------------------- */
+button,
+.button-primary,
+.button-secondary,
+.button-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 0.55rem 1.05rem;
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 600;
+    line-height: 1.2;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+button,
 button.button-primary,
-button.primary,
 .button-primary {
     background: var(--primary);
-    color: white;
+    color: #fff;
+}
+
+button:hover,
+.button-primary:hover {
+    background: var(--primary-hover);
+    text-decoration: none;
 }
 
 button.button-secondary,
 .button-secondary {
-    background: white;
+    background: var(--surface);
     color: var(--text);
+    border-color: var(--border-strong);
+}
+
+button.button-secondary:hover,
+.button-secondary:hover {
+    background: var(--surface-2);
+    text-decoration: none;
+}
+
+.button-ghost {
+    background: transparent;
+    color: var(--muted);
+    border-color: transparent;
+}
+
+.button-ghost:hover {
+    background: var(--surface-2);
+    color: var(--text);
+    text-decoration: none;
+}
+
+button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.button-sm {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.82rem;
+}
+
+/* --- Forms ---------------------------------------------------------------- */
+label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--text);
+}
+
+input[type="email"],
+input[type="password"],
+input[type="text"],
+input[type="search"],
+input[type="date"],
+input[type="file"],
+select,
+textarea {
+    width: 100%;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--text);
+    background: var(--surface);
+}
+
+textarea {
+    min-height: 96px;
+    resize: vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.form-group {
+    margin-bottom: 1.1rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+}
+
+.form-grid .form-group {
+    margin-bottom: 0;
+}
+
+.field-hint,
+small {
+    display: block;
+    margin-top: 0.3rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+/* --- Alerts / inline messages -------------------------------------------- */
+.alert {
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-sm);
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    font-size: 0.9rem;
+}
+
+.alert-error,
+.banner-error,
+.error {
+    background: var(--danger-soft);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    padding: 0.75rem 0.9rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+}
+
+.alert-success {
+    background: var(--ok-soft);
+    color: var(--ok);
+    border-color: var(--ok);
+}
+
+/* --- Cards & utilities ---------------------------------------------------- */
+.card {
+    background: var(--surface);
     border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.card > h2:first-child,
+.card > h3:first-child {
+    margin-top: 0;
 }
 
 .container {
@@ -54,9 +310,569 @@ button.button-secondary,
     margin: 0 auto;
 }
 
+.text-center { text-align: center; }
+.mt-1 { margin-top: 1rem; }
+.muted { color: var(--muted); }
+
+/* ==========================================================================
+   Application shell
+   ========================================================================== */
+.app-shell {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) 1fr;
+    min-height: 100vh;
+}
+
+/* Sidebar (fixed full-height navigation rail) */
+.app-sidebar {
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.app-sidebar .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 1.1rem 1.25rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-sidebar .brand .brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 800;
+}
+
+.app-sidebar .brand .brand-org {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--sidebar-text-muted);
+    margin-top: 1px;
+}
+
+.app-sidebar .nav-group {
+    padding: 1rem 0.75rem 0.25rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sidebar-text-muted);
+}
+
+.app-sidebar nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 0.6rem;
+}
+
+.app-sidebar nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.6rem 0.7rem;
+    border-radius: var(--radius-sm);
+    color: var(--sidebar-text);
+    font-size: 0.92rem;
+    font-weight: 500;
+}
+
+.app-sidebar nav a:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+    text-decoration: none;
+}
+
+.app-sidebar nav a.active {
+    background: var(--sidebar-active-bg);
+    color: var(--sidebar-active-text);
+    font-weight: 600;
+    box-shadow: inset 3px 0 0 var(--primary);
+}
+
+.app-sidebar nav a.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.app-sidebar nav a .nav-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    opacity: 0.9;
+}
+
+.app-sidebar .sidebar-foot {
+    margin-top: auto;
+    padding: 0.9rem 1.1rem;
+    font-size: 0.72rem;
+    color: var(--sidebar-text-muted);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Main column */
+.app-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 100vh;
+}
+
+/* Shell bar (sticky top bar) */
+.app-shellbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    height: var(--shellbar-h);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0 1.5rem;
+    background: var(--shellbar-bg);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+}
+
+.app-shellbar .page-heading h1 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.app-shellbar .page-heading .crumb {
+    font-size: 0.76rem;
+    color: var(--muted);
+}
+
+.app-shellbar .shellbar-spacer {
+    flex: 1;
+}
+
+.app-shellbar .shell-search {
+    position: relative;
+    width: min(320px, 30vw);
+}
+
+.app-shellbar .shell-search input {
+    padding-left: 2.1rem;
+    background: var(--surface-2);
+    border-color: var(--border);
+}
+
+.app-shellbar .shell-search .search-icon {
+    position: absolute;
+    left: 0.65rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--muted);
+    pointer-events: none;
+}
+
+.app-shellbar .shellbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid transparent;
+}
+
+.icon-button:hover {
+    background: var(--surface-2);
+    color: var(--text);
+}
+
+.user-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.3rem 0.5rem 0.3rem 0.35rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.user-chip .avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.user-chip .user-email {
+    font-size: 0.85rem;
+    color: var(--text);
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Page content area */
+.app-content {
+    flex: 1;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+/* ==========================================================================
+   KPI stat tiles
+   ========================================================================== */
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.stats-cards article {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.15rem 1.25rem;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+.stats-cards article::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--primary);
+}
+
+.stats-cards article.tile-warn::before { background: var(--warn); }
+.stats-cards article.tile-danger::before { background: var(--danger); }
+.stats-cards article.tile-ok::before { background: var(--ok); }
+
+.stats-cards article h3 {
+    margin: 0 0 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.stats-cards article p {
+    margin: 0;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--heading);
+    line-height: 1;
+}
+
+/* ==========================================================================
+   Data tables (dense, enterprise)
+   ========================================================================== */
+.table-shell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
+
+table.data-table,
+.table-shell table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+table.data-table thead th,
+.table-shell thead th {
+    position: sticky;
+    top: 0;
+    background: var(--surface-2);
+    color: var(--muted);
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+table.data-table tbody td,
+.table-shell tbody td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+table.data-table tbody tr:last-child td,
+.table-shell tbody tr:last-child td {
+    border-bottom: none;
+}
+
+table.data-table tbody tr:hover,
+.table-shell tbody tr:hover {
+    background: var(--surface-2);
+}
+
+table.data-table td.num,
+table.data-table th.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+table.data-table tbody tr.overdue td:first-child {
+    box-shadow: inset 3px 0 0 var(--danger);
+}
+
+.table-empty {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    color: var(--muted);
+}
+
+/* Filter bar */
+.filter-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 1rem;
+}
+
+.filter-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+}
+
+.filter-form input,
+.filter-form select {
+    min-width: 170px;
+}
+
+.filter-form button {
+    height: 40px;
+}
+
+/* ==========================================================================
+   Status badges
+   ========================================================================== */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.76rem;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.badge::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.85;
+}
+
+.badge.status-Open { background: var(--info-soft); color: var(--info); }
+.badge.status-In_Progress { background: var(--warn-soft); color: var(--warn); }
+.badge.status-Resolved { background: var(--ok-soft); color: var(--ok); }
+.badge.status-Closed { background: var(--neutral-soft); color: var(--neutral); }
+.badge.overdue { background: var(--danger-soft); color: var(--danger); margin-left: 0.4rem; }
+
+.badge.prio-Low { background: var(--neutral-soft); color: var(--neutral); }
+.badge.prio-Medium { background: var(--info-soft); color: var(--info); }
+.badge.prio-High { background: var(--warn-soft); color: var(--warn); }
+.badge.prio-Critical { background: var(--danger-soft); color: var(--danger); }
+
+/* ==========================================================================
+   Event detail bits (promoted from the old inline styles)
+   ========================================================================== */
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.detail-grid .field {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.9rem 1rem;
+}
+
+.field .label {
+    color: var(--muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.field .value {
+    font-weight: 600;
+    margin-top: 0.25rem;
+    word-break: break-word;
+}
+
+.action-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.action-bar form {
+    display: inline;
+    margin: 0;
+}
+
+.inline-form {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.thread .comment {
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 0;
+}
+
+.thread .comment:last-child {
+    border-bottom: none;
+}
+
+.thread .comment .meta {
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+/* Recent activity feed */
+.recent-activity {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.activity-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.activity-item {
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    color: var(--text);
+}
+
+.activity-item:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-2);
+    text-decoration: none;
+}
+
+.activity-item strong {
+    flex: 1;
+    color: var(--heading);
+}
+
+.activity-item span {
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+.activity-item time {
+    color: var(--muted);
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+/* ==========================================================================
+   Public / auth pages
+   ========================================================================== */
 .hero {
     padding: 4rem 0;
-    background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
+    background: linear-gradient(135deg, var(--primary-soft) 0%, var(--bg) 100%);
 }
 
 .hero-content {
@@ -66,7 +882,7 @@ button.button-secondary,
 }
 
 .hero h1 {
-    font-size: clamp(2.5rem, 4vw, 4rem);
+    font-size: clamp(2.2rem, 4vw, 3.4rem);
     margin-bottom: 1rem;
 }
 
@@ -74,6 +890,7 @@ button.button-secondary,
     margin-bottom: 2rem;
     color: var(--muted);
     line-height: 1.8;
+    font-size: 1.05rem;
 }
 
 .hero-actions {
@@ -103,132 +920,128 @@ button.button-secondary,
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 1.75rem;
-    box-shadow: var(--shadow);
-}
-
-.feature-grid h3 {
-    margin-bottom: 0.75rem;
+    box-shadow: var(--shadow-sm);
 }
 
 .footer-links {
     padding: 2rem 0;
     text-align: center;
+    color: var(--muted);
 }
 
 .footer-links a {
     margin: 0 0.75rem;
+    color: var(--muted);
 }
 
-.admin-shell {
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: 1.5rem;
+/* Auth card (login / register / setup) */
+.auth-wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    background:
+        radial-gradient(1200px 600px at 100% 0%, var(--primary-soft), transparent 60%),
+        var(--bg);
 }
 
-.admin-sidebar {
+.auth-card {
+    width: min(440px, 100%);
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 1.5rem;
-    height: min(100vh, calc(100vh - 4rem));
-    position: sticky;
-    top: 2rem;
+    box-shadow: var(--shadow-lg);
+    padding: 2.25rem;
 }
 
-.admin-sidebar .brand {
-    font-size: 1.5rem;
-    font-weight: 700;
+.auth-card .auth-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--heading);
+    margin-bottom: 0.35rem;
+}
+
+.auth-card .auth-brand .brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: var(--primary);
+    color: #fff;
+    font-weight: 800;
+}
+
+.auth-card .auth-sub {
+    color: var(--muted);
+    margin-bottom: 1.75rem;
+    font-size: 0.92rem;
+}
+
+.auth-card form button[type="submit"] {
+    width: 100%;
+    margin-top: 0.25rem;
+}
+
+.auth-alt {
+    margin-top: 1.25rem;
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+
+.setup-steps {
+    display: flex;
+    gap: 0.5rem;
     margin-bottom: 1.5rem;
+    font-size: 0.75rem;
+    color: var(--muted);
 }
 
-.admin-sidebar nav {
-    display: grid;
-    gap: 0.75rem;
-}
-
-.admin-sidebar a {
-    display: block;
-    padding: 0.9rem 1rem;
-    border-radius: 12px;
-    color: var(--text);
-    border: 1px solid transparent;
-}
-
-.admin-sidebar a.active,
-.admin-sidebar a:hover {
-    border-color: var(--primary);
-    background: rgba(59, 130, 246, 0.1);
-}
-
-.admin-main {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.admin-topbar {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    align-items: center;
-}
-
-.stats-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 1rem;
-}
-
-.stats-cards article {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-}
-
-.stats-cards h3 {
-    margin-bottom: 0.75rem;
-}
-
-.quick-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.recent-activity {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-}
-
-.activity-feed {
-    display: grid;
-    gap: 1rem;
-}
-
-.activity-item {
-    padding: 1rem;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    align-items: center;
-}
-
-.activity-item strong {
+.setup-steps .step {
     flex: 1;
+    padding: 0.4rem 0.6rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    text-align: center;
 }
 
+.setup-steps .step.active {
+    background: var(--primary-soft);
+    color: var(--primary);
+    border-color: var(--primary);
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
 @media (max-width: 900px) {
-    .admin-shell {
+    .app-shell {
         grid-template-columns: 1fr;
     }
 
-    .admin-sidebar {
+    .app-sidebar {
         position: static;
         height: auto;
+        flex-direction: column;
+    }
+
+    .app-sidebar nav {
+        flex-direction: column;
+    }
+
+    .app-shellbar .shell-search {
+        display: none;
+    }
+
+    .user-chip .user-email {
+        display: none;
     }
 }

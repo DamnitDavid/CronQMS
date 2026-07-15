@@ -17,6 +17,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
+from app.api.routes.setup import admin_exists
 from app.core.auth import get_current_user_optional
 from app.core.permissions import Permission, require_permission, role_has_permission
 from app.core.sla import sla_target
@@ -92,9 +93,17 @@ def _redirect(event_id: int, error: Optional[str] = None) -> RedirectResponse:
 
 # --- auth pages ------------------------------------------------------------
 @router.get("/login")
-async def login_page(request: Request, current_user=Depends(get_current_user_optional)):
+async def login_page(
+    request: Request,
+    current_user=Depends(get_current_user_optional),
+    db: Session = Depends(get_db),
+):
     if current_user:
         return RedirectResponse("/admin/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+    # Before any admin exists, the login page is a dead end — route first-run
+    # visitors to the setup wizard instead.
+    if not admin_exists(db):
+        return RedirectResponse("/setup", status_code=status.HTTP_303_SEE_OTHER)
     return templates.TemplateResponse("auth/login.html", {"request": request})
 
 
