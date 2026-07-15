@@ -1,6 +1,6 @@
 """Quality events endpoints."""
 
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -11,6 +11,7 @@ from app.database import get_db
 from app.models import Event, User
 from app.schemas.event import (
     EventCreate,
+    EventReopen,
     EventResponse,
     EventStatus,
     EventStatusUpdate,
@@ -18,6 +19,7 @@ from app.schemas.event import (
     EventPriority,
     EventUpdate,
 )
+from app.core.audit import set_audit_reason
 from app.core.permissions import Permission, require_permission
 from app.core.sla import sla_target
 
@@ -173,6 +175,17 @@ async def update_event(
     return event
 
 
+# Non-terminal transitions available via the ordinary status endpoint. Closure
+# (-> Closed) and reopening (Closed -> Open) are deliberately excluded here and
+# handled by their own privileged endpoints below.
+_ALLOWED_TRANSITIONS = {
+    EventStatus.OPEN: {EventStatus.IN_PROGRESS},
+    EventStatus.IN_PROGRESS: {EventStatus.RESOLVED, EventStatus.OPEN},
+    EventStatus.RESOLVED: {EventStatus.IN_PROGRESS},
+    EventStatus.CLOSED: set(),
+}
+
+
 @router.patch("/{event_id}/status", response_model=EventResponse)
 async def patch_event_status(
     event_id: int,
@@ -180,25 +193,86 @@ async def patch_event_status(
     current_user: User = Depends(require_permission(Permission.EVENT_CHANGE_STATUS)),
     db: Session = Depends(get_db),
 ) -> Event:
-    """Update event status with workflow validation."""
+    """Advance an event through the investigation workflow.
+
+    Only non-terminal transitions are permitted here; closing and reopening are
+    privileged actions with their own endpoints. Notably an event cannot jump
+    straight from Open to Closed — it must pass through investigation.
+    """
     event = _get_event_in_org(db, event_id, current_user)
 
     current_status = EventStatus(event.status)
     new_status = status_update.status
-    allowed_transitions = {
-        EventStatus.OPEN: {EventStatus.IN_PROGRESS, EventStatus.RESOLVED, EventStatus.CLOSED},
-        EventStatus.IN_PROGRESS: {EventStatus.RESOLVED, EventStatus.CLOSED, EventStatus.OPEN},
-        EventStatus.RESOLVED: {EventStatus.CLOSED, EventStatus.IN_PROGRESS},
-        EventStatus.CLOSED: {EventStatus.OPEN},
-    }
 
-    if new_status not in allowed_transitions[current_status]:
+    if new_status not in _ALLOWED_TRANSITIONS[current_status]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid status transition from {current_status.value} to {new_status.value}",
+            detail=(
+                f"Invalid status transition from {current_status.value} to "
+                f"{new_status.value}. Use /close or /reopen for closure."
+            ),
         )
 
     event.status = new_status.value
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+    return event
+
+
+@router.post("/{event_id}/close", response_model=EventResponse)
+async def close_event(
+    event_id: int,
+    current_user: User = Depends(require_permission(Permission.EVENT_APPROVE_CLOSURE)),
+    db: Session = Depends(get_db),
+) -> Event:
+    """Approve and close a resolved event.
+
+    Closure requires an independent approver: the closer may be neither the
+    reporter nor the assigned investigator. The event must already be Resolved.
+    """
+    event = _get_event_in_org(db, event_id, current_user)
+
+    if event.status != EventStatus.RESOLVED.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only a Resolved event can be closed",
+        )
+    if current_user.id in (event.reported_by, event.assigned_to):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Closure must be approved by someone other than the reporter or investigator",
+        )
+
+    event.status = EventStatus.CLOSED.value
+    event.closed_by = current_user.id
+    event.closed_at = datetime.utcnow()
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+    return event
+
+
+@router.post("/{event_id}/reopen", response_model=EventResponse)
+async def reopen_event(
+    event_id: int,
+    reopen: EventReopen,
+    current_user: User = Depends(require_permission(Permission.EVENT_REOPEN)),
+    db: Session = Depends(get_db),
+) -> Event:
+    """Reopen a closed event. Privileged, and audit-logged with a reason."""
+    event = _get_event_in_org(db, event_id, current_user)
+
+    if event.status != EventStatus.CLOSED.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only a Closed event can be reopened",
+        )
+
+    set_audit_reason(db, reopen.reason)
+    event.status = EventStatus.OPEN.value
+    event.closed_by = None
+    event.closed_at = None
     db.add(event)
     db.commit()
     db.refresh(event)

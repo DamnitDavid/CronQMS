@@ -52,6 +52,7 @@ class Event(Base):
         "supplier",
         "work_order",
         "machine",
+        "closed_by",
         "is_active",
     )
 
@@ -79,6 +80,12 @@ class Event(Base):
 
     is_active = Column(Boolean, default=True, nullable=False)
     reported_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    # Closure approval: who approved the closure and when. A closer must be
+    # distinct from the reporter and the investigator (enforced in the route).
+    closed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    closed_at = Column(DateTime, nullable=True)
+
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

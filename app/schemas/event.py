@@ -64,9 +64,15 @@ class EventUpdate(TraceabilityFields):
 
 
 class EventStatusUpdate(BaseModel):
-    """Schema for updating event status."""
+    """Schema for updating event status (non-terminal transitions only)."""
 
     status: EventStatus
+
+
+class EventReopen(BaseModel):
+    """Schema for reopening a closed event; a reason is mandatory."""
+
+    reason: str = Field(..., min_length=1, max_length=2000)
 
 
 class EventResponse(BaseModel):
@@ -90,6 +96,8 @@ class EventResponse(BaseModel):
     machine: Optional[str]
     is_overdue: bool
     days_open: int
+    closed_by: Optional[int]
+    closed_at: Optional[datetime]
     is_active: bool
     created_at: datetime
     updated_at: datetime
