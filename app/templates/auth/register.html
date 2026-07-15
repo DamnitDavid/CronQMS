@@ -1,30 +1,35 @@
 {% extends "base.html" %}
 
-{% block title %}Register - Proins{% endblock %}
+{% block title %}Create account - Proins{% endblock %}
 
 {% block content %}
-<div class="container" style="max-width: 400px; margin-top: 3rem;">
-    <h2>Create Account</h2>
-    
-    <form hx-post="/api/auth/register" hx-target="#response">
-        <div class="form-group">
-            <label for="email">Email Address</label>
-            <input type="email" id="email" name="email" required>
+<div class="auth-wrap">
+    <div class="auth-card">
+        <div class="auth-brand">
+            <span class="brand-mark">P</span> Proins
         </div>
+        <p class="auth-sub">Create your account to get started.</p>
 
-        <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required minlength="8">
-            <small>Must be at least 8 characters</small>
+        <form hx-post="/api/auth/register" hx-target="#response">
+            <div class="form-group">
+                <label for="email">Email address</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required minlength="8">
+                <small>Must be at least 8 characters</small>
+            </div>
+
+            <button type="submit" class="button-primary">Sign up</button>
+        </form>
+
+        <div id="response" class="mt-1"></div>
+
+        <div class="auth-alt">
+            <p>Already have an account? <a href="/login">Sign in here</a></p>
         </div>
-
-        <button type="submit">Sign Up</button>
-    </form>
-
-    <div class="mt-1 text-center">
-        <p>Already have an account? <a href="/login">Login here</a></p>
     </div>
-
-    <div id="response"></div>
 </div>
 {% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}First-time Setup - Proins{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+    <div class="auth-card">
+        <div class="auth-brand">
+            <span class="brand-mark">P</span> Proins
+        </div>
+        <p class="auth-sub">Welcome — let's set up your workspace and administrator account.</p>
+
+        <div class="setup-steps">
+            <div class="step active">1. Create admin</div>
+            <div class="step">2. Start using Proins</div>
+        </div>
+
+        <form hx-post="/setup" hx-target="#response">
+            <div class="form-group">
+                <label for="org_name">Organization name</label>
+                <input type="text" id="org_name" name="org_name" placeholder="Acme Manufacturing" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Admin email</label>
+                <input type="email" id="email" name="email" placeholder="admin@acme.com" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required minlength="8">
+                <small>Must be at least 8 characters.</small>
+            </div>
+            <div class="form-group">
+                <label for="confirm_password">Confirm password</label>
+                <input type="password" id="confirm_password" name="confirm_password" required minlength="8">
+            </div>
+
+            <button type="submit" class="button-primary">Create admin &amp; sign in</button>
+        </form>
+
+        <div id="response" class="mt-1"></div>
+    </div>
+</div>
+{% endblock %}

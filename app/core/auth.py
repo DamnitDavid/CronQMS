@@ -1,7 +1,8 @@
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.database import get_db
 from app.models.user import User
 from app.core.security import decode_access_token, verify_password
@@ -10,6 +11,30 @@ from app.core.security import decode_access_token, verify_password
 ACCESS_TOKEN_COOKIE = "access_token"
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
+
+
+def set_auth_cookie(response: Response, token: str, expires_in: int) -> None:
+    """Attach the JWT as an HttpOnly, SameSite=Lax session cookie.
+
+    ``Secure`` is enabled outside development so the cookie is never sent over
+    plain HTTP in production; ``SameSite=Lax`` blocks it on cross-site POSTs
+    while still allowing top-level navigations. Shared by the login and
+    first-time-setup flows so browser sessions are established identically.
+    """
+    response.set_cookie(
+        key=ACCESS_TOKEN_COOKIE,
+        value=token,
+        max_age=expires_in,
+        httponly=True,
+        samesite="lax",
+        secure=get_settings().environment != "development",
+        path="/",
+    )
+
+
+def clear_auth_cookie(response: Response) -> None:
+    """Remove the session cookie."""
+    response.delete_cookie(key=ACCESS_TOKEN_COOKIE, path="/")
 
 
 def get_token_from_request(

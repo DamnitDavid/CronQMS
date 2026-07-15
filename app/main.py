@@ -1,15 +1,19 @@
 """FastAPI application entry point."""
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, Request
+from fastapi import FastAPI, Depends, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
 import os
 
 from app.config import get_settings
 from app.core.auth import get_current_user_optional
-from app.api.routes import admin, attachments, auth, capas, comments, events, pages, reports, users
+from app.database import get_db
+from app.api.routes import admin, attachments, auth, capas, comments, events, pages, reports, setup, users
+from app.api.routes.setup import admin_exists
 
 settings = get_settings()
 
@@ -66,6 +70,7 @@ app.include_router(reports.router)
 app.include_router(admin.router)
 app.include_router(pages.router)
 app.include_router(users.router)
+app.include_router(setup.router)
 
 
 # Health check endpoint
@@ -88,8 +93,15 @@ async def health_check() -> dict:
 async def root(
     request: Request,
     current_user=Depends(get_current_user_optional),
+    db: Session = Depends(get_db),
 ):
-    """Render the public landing page."""
+    """Render the public landing page.
+
+    On a fresh install (no Admin yet), send the visitor straight to the
+    first-time setup wizard so the app is discoverable out of the box.
+    """
+    if not admin_exists(db):
+        return RedirectResponse("/setup", status_code=status.HTTP_303_SEE_OTHER)
     return templates.TemplateResponse(
         "index.html",
         {

@@ -1,71 +1,45 @@
-{% extends "base.html" %}
+{% extends "base_admin.html" %}
 
-{% block title %}Admin Dashboard - Proins{% endblock %}
+{% block title %}Dashboard{% endblock %}
+{% set active_nav = "dashboard" %}
 
-{% block content %}
-<div class="admin-shell">
-    <aside class="admin-sidebar">
-        <div class="brand">Proins</div>
-        <nav>
-            <a href="/admin/dashboard" class="active">Dashboard</a>
-            <a href="/admin/events">Events</a>
-            <a href="#">Templates</a>
-            <a href="#">Users</a>
-            <a href="#">Settings</a>
-            <a href="#">Reports</a>
-        </nav>
-    </aside>
+{% block admin_content %}
+<section class="stats-cards">
+    <article>
+        <h3>Total Events</h3>
+        <p>{{ stats.total_events }}</p>
+    </article>
+    <article>
+        <h3>Open Events</h3>
+        <p>{{ stats.open_events }}</p>
+    </article>
+    <article class="tile-danger">
+        <h3>Overdue</h3>
+        <p>{{ stats.overdue_events }}</p>
+    </article>
+    <article class="tile-ok">
+        <h3>Resolved Today</h3>
+        <p>{{ stats.resolved_today }}</p>
+    </article>
+    <article class="tile-warn">
+        <h3>Pending Actions</h3>
+        <p>{{ stats.pending_actions }}</p>
+    </article>
+</section>
 
-    <div class="admin-main">
-        <header class="admin-topbar">
-            <div>
-                <h1>Dashboard</h1>
-                <p>Overview of recent quality activity and key metrics.</p>
-            </div>
-            <div class="profile-menu">
-                <span>{{ current_user.email }}</span>
-                <button id="themeToggle">Toggle Theme</button>
-            </div>
-        </header>
+<section class="page-actions">
+    <a class="button-primary" href="/admin/events/create">New Event</a>
+    <a class="button-secondary" href="/admin/events">View Events</a>
+    <button class="button-secondary"
+            hx-get="/admin/fragments/recent-activity"
+            hx-target="#activityFeed"
+            hx-swap="innerHTML">Refresh Activity</button>
+</section>
 
-        <section class="stats-cards">
-            <article>
-                <h3>Total Events</h3>
-                <p>{{ stats.total_events }}</p>
-            </article>
-            <article>
-                <h3>Open Events</h3>
-                <p>{{ stats.open_events }}</p>
-            </article>
-            <article>
-                <h3>Overdue</h3>
-                <p>{{ stats.overdue_events }}</p>
-            </article>
-            <article>
-                <h3>Resolved Today</h3>
-                <p>{{ stats.resolved_today }}</p>
-            </article>
-            <article>
-                <h3>Pending Actions</h3>
-                <p>{{ stats.pending_actions }}</p>
-            </article>
-        </section>
-
-        <section class="quick-actions">
-            <a class="button-primary" href="/admin/events/create">New Event</a>
-            <a class="button-secondary" href="/admin/events">View Events</a>
-            <button class="button-secondary"
-                    hx-get="/admin/fragments/recent-activity"
-                    hx-target="#activityFeed"
-                    hx-swap="innerHTML">Refresh Activity</button>
-        </section>
-
-        <section class="recent-activity">
-            <h2>Recent Activity</h2>
-            <div class="activity-feed" id="activityFeed">
-                {% include "admin/_activity_feed.html" %}
-            </div>
-        </section>
+<section class="recent-activity">
+    <div class="section-title"><h2>Recent Activity</h2></div>
+    <div class="activity-feed" id="activityFeed">
+        {% include "admin/_activity_feed.html" %}
     </div>
-</div>
+</section>
 {% endblock %}

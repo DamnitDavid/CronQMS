@@ -8,34 +8,17 @@ from app.database import get_db
 from app.models import User
 from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
 from app.core.security import hash_password, create_token_for_user
-from app.core.auth import ACCESS_TOKEN_COOKIE, authenticate_user, get_current_user
+from app.core.auth import (
+    authenticate_user,
+    clear_auth_cookie,
+    get_current_user,
+    set_auth_cookie,
+)
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 settings = get_settings()
 
-
-def _set_auth_cookie(response: Response, token: str, expires_in: int) -> None:
-    """Attach the JWT as an HttpOnly, SameSite=Lax session cookie.
-
-    ``Secure`` is enabled outside development so the cookie is never sent over
-    plain HTTP in production; ``SameSite=Lax`` blocks it on cross-site POSTs
-    while still allowing top-level navigations.
-    """
-    response.set_cookie(
-        key=ACCESS_TOKEN_COOKIE,
-        value=token,
-        max_age=expires_in,
-        httponly=True,
-        samesite="lax",
-        secure=settings.environment != "development",
-        path="/",
-    )
-
-
-def _clear_auth_cookie(response: Response) -> None:
-    """Remove the session cookie."""
-    response.delete_cookie(key=ACCESS_TOKEN_COOKIE, path="/")
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(
@@ -110,7 +93,7 @@ async def login(
         )
 
     access_token, expires_in = create_token_for_user(user.id, user.email)
-    _set_auth_cookie(response, access_token, expires_in)
+    set_auth_cookie(response, access_token, expires_in)
 
     return TokenResponse(
         access_token=access_token,
@@ -137,7 +120,7 @@ async def logout(response: Response) -> dict:
     Returns:
         dict: Logout confirmation.
     """
-    _clear_auth_cookie(response)
+    clear_auth_cookie(response)
     return {"message": "Logged out successfully"}
 
 
@@ -165,7 +148,7 @@ async def browser_login(
     access_token, expires_in = create_token_for_user(user.id, user.email)
     response = Response(status_code=status.HTTP_204_NO_CONTENT)
     response.headers["HX-Redirect"] = "/admin/dashboard"
-    _set_auth_cookie(response, access_token, expires_in)
+    set_auth_cookie(response, access_token, expires_in)
     return response
 
 
@@ -174,5 +157,5 @@ async def browser_logout() -> Response:
     """Log out a browser session: clear the cookie and redirect to login."""
     response = Response(status_code=status.HTTP_204_NO_CONTENT)
     response.headers["HX-Redirect"] = "/login"
-    _clear_auth_cookie(response)
+    clear_auth_cookie(response)
     return response
