@@ -8,7 +8,11 @@ import os
 import unittest
 import uuid
 
-# Shared test DATABASE_URL is configured in tests/__init__.py.
+# Configure an isolated SQLite database before importing the app. Each test
+# module sets this itself because ``unittest discover`` imports test modules as
+# top-level names, bypassing tests/__init__.py.
+os.environ.setdefault("DATABASE_URL", "sqlite:///./test_proins.db")
+
 from fastapi.testclient import TestClient
 
 from app.config import get_settings

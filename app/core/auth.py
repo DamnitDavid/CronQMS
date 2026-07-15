@@ -51,6 +51,12 @@ async def get_current_user(email: str = Depends(get_current_user_email), db: Ses
     user = db.query(User).filter(User.email == email).first()
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    # Attribute any mutations made during this request to the authenticated
+    # user so the audit trail records the actor. Imported lazily to avoid a
+    # circular import (audit -> models -> core).
+    from app.core.audit import set_audit_actor
+
+    set_audit_actor(db, user.id)
     return user
 
 async def get_current_user_optional(

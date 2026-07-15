@@ -1,10 +1,11 @@
 """Test suite package.
 
-All test modules share a single SQLite database and one module-level engine
-(``app.database.engine``). Establishing ``DATABASE_URL`` here — before any test
-module imports the application — guarantees every module agrees on the same
-database file, so running them together under ``unittest discover`` behaves the
-same as running them individually.
+All test modules share a single SQLite database (``test_proins.db``). Each
+module also sets ``DATABASE_URL`` itself before importing the app, because
+``unittest discover`` imports test modules as top-level names and does not run
+this package initializer. This line is a fallback for package-style imports
+(e.g. ``python -m unittest tests.test_x``); ``setdefault`` keeps the first
+writer's value, so the two mechanisms never conflict.
 """
 
 import os

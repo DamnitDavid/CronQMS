@@ -34,6 +34,21 @@ class Event(Base):
 
     __tablename__ = "events"
 
+    # Audit metadata consumed by app.core.audit.register_auditing.
+    __audit_entity__ = "event"
+    __audit_fields__ = (
+        "title",
+        "description",
+        "event_type",
+        "status",
+        "priority",
+        "assigned_to",
+        "site_id",
+        "organization_id",
+        "reported_by",
+        "is_active",
+    )
+
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
