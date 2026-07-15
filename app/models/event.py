@@ -43,6 +43,7 @@ class Event(Base):
         "status",
         "priority",
         "assigned_to",
+        "assigned_group_id",
         "site_id",
         "organization_id",
         "reported_by",
@@ -63,6 +64,7 @@ class Event(Base):
     status = Column(String(30), nullable=False, default=EventStatus.OPEN.value)
     priority = Column(String(20), nullable=False, default=EventPriority.MEDIUM.value)
     assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True)
+    assigned_group_id = Column(Integer, ForeignKey("assignee_groups.id"), nullable=True)
     organization_id = Column(
         Integer, ForeignKey("organizations.id"), nullable=False, index=True
     )
@@ -90,6 +92,7 @@ class Event(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     assigned_user = relationship("User", foreign_keys=[assigned_to], lazy="joined")
+    assigned_group = relationship("AssigneeGroup", foreign_keys=[assigned_group_id], lazy="joined")
     reporter = relationship("User", foreign_keys=[reported_by], lazy="joined")
     organization = relationship("Organization")
     site = relationship("Site")

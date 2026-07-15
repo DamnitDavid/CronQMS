@@ -8,6 +8,7 @@ from app.models.attachment import Attachment
 from app.models.comment import Comment
 from app.models.event_history import EventHistory
 from app.models.custom_field import CustomField, CustomFieldType, EventCustomValue
+from app.models.assignee_group import AssigneeGroup, assignee_group_members
 
 # Wire the audit choke point once, after the models are defined. CAPAs are
 # audited from birth alongside events.
@@ -32,4 +33,6 @@ __all__ = [
     "CustomField",
     "CustomFieldType",
     "EventCustomValue",
+    "AssigneeGroup",
+    "assignee_group_members",
 ]

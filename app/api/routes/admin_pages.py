@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 from app.core.permissions import Permission, require_permission
 from app.core.security import hash_password
 from app.database import get_db
-from app.models import Capa, CustomField, User
+from app.models import AssigneeGroup, Capa, CustomField, User
 from app.models.custom_field import CustomFieldType
 from app.models.event import EventType
 from app.models.user import Role
@@ -86,6 +86,7 @@ async def custom_field_create(
     label: str = Form(...),
     field_type: str = Form(...),
     options: str = Form(""),
+    required: bool = Form(False),
 ):
     if event_type not in EVENT_TYPES:
         return _settings_redirect(EventType.NON_CONFORMANCE.value, "Unknown event type.")
@@ -111,6 +112,7 @@ async def custom_field_create(
             key=unique_key(db, current_user.organization_id, event_type, label),
             field_type=field_type,
             options=stored_options,
+            required=required,
             display_order=order,
             is_active=True,
         )
@@ -139,6 +141,116 @@ async def custom_field_delete(
         db.add(field)
         db.commit()
     return _settings_redirect(event_type)
+
+
+# --- Settings: assignee groups ---------------------------------------------
+def _groups_redirect(error: Optional[str] = None) -> RedirectResponse:
+    url = "/admin/settings/groups"
+    if error:
+        url += f"?error={quote(error)}"
+    return RedirectResponse(url, status_code=status.HTTP_303_SEE_OTHER)
+
+
+def _group_in_org(db: Session, group_id: int, organization_id: int) -> Optional[AssigneeGroup]:
+    return (
+        db.query(AssigneeGroup)
+        .filter(AssigneeGroup.id == group_id, AssigneeGroup.organization_id == organization_id)
+        .first()
+    )
+
+
+@router.get("/admin/settings/groups")
+async def groups_page(
+    request: Request,
+    current_user: User = Depends(require_permission(Permission.SETTINGS_MANAGE)),
+    db: Session = Depends(get_db),
+    error: Optional[str] = None,
+):
+    groups = (
+        db.query(AssigneeGroup)
+        .filter(
+            AssigneeGroup.organization_id == current_user.organization_id,
+            AssigneeGroup.is_active.is_(True),
+        )
+        .order_by(AssigneeGroup.name.asc())
+        .all()
+    )
+    return templates.TemplateResponse(
+        "admin/settings/groups.html",
+        {
+            "request": request,
+            "current_user": current_user,
+            "groups": groups,
+            "users": _org_users(db, current_user.organization_id),
+            "error": error,
+        },
+    )
+
+
+@router.post("/admin/settings/groups")
+async def group_create(
+    current_user: User = Depends(require_permission(Permission.SETTINGS_MANAGE)),
+    db: Session = Depends(get_db),
+    name: str = Form(...),
+):
+    name = name.strip()
+    if not name:
+        return _groups_redirect("Group name is required.")
+    db.add(
+        AssigneeGroup(
+            organization_id=current_user.organization_id, name=name, is_active=True
+        )
+    )
+    db.commit()
+    return _groups_redirect()
+
+
+@router.post("/admin/settings/groups/{group_id}/delete")
+async def group_delete(
+    group_id: int,
+    current_user: User = Depends(require_permission(Permission.SETTINGS_MANAGE)),
+    db: Session = Depends(get_db),
+):
+    group = _group_in_org(db, group_id, current_user.organization_id)
+    if group is not None:
+        group.is_active = False
+        db.add(group)
+        db.commit()
+    return _groups_redirect()
+
+
+@router.post("/admin/settings/groups/{group_id}/members/add")
+async def group_member_add(
+    group_id: int,
+    current_user: User = Depends(require_permission(Permission.SETTINGS_MANAGE)),
+    db: Session = Depends(get_db),
+    user_id: int = Form(...),
+):
+    group = _group_in_org(db, group_id, current_user.organization_id)
+    user = _user_in_org(db, user_id, current_user.organization_id)
+    if group is None or user is None:
+        return _groups_redirect("Could not add member.")
+    if user not in group.members:
+        group.members.append(user)
+        db.add(group)
+        db.commit()
+    return _groups_redirect()
+
+
+@router.post("/admin/settings/groups/{group_id}/members/remove")
+async def group_member_remove(
+    group_id: int,
+    current_user: User = Depends(require_permission(Permission.SETTINGS_MANAGE)),
+    db: Session = Depends(get_db),
+    user_id: int = Form(...),
+):
+    group = _group_in_org(db, group_id, current_user.organization_id)
+    user = _user_in_org(db, user_id, current_user.organization_id)
+    if group is not None and user is not None and user in group.members:
+        group.members.remove(user)
+        db.add(group)
+        db.commit()
+    return _groups_redirect()
 
 
 # --- Users -----------------------------------------------------------------

@@ -2,8 +2,11 @@
 
 {% block title %}Settings — Custom Fields{% endblock %}
 {% set active_nav = "settings" %}
+{% set settings_tab = "fields" %}
 
 {% block admin_content %}
+{% include "admin/settings/_tabs.html" %}
+
 {% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
 
 <section class="card">
@@ -38,7 +41,7 @@
                     {% for field in fields %}
                     <tr>
                         <td>
-                            {{ field.label }}
+                            {{ field.label }}{% if field.required %} <span class="req-star" title="Required">★</span>{% endif %}
                             {% if field.field_type == "select" and field.options %}
                             <div class="field-hint" style="margin-top: 0.2rem;">Options: {{ field.options.split("\n") | join(", ") }}</div>
                             {% endif %}
@@ -83,6 +86,12 @@
             <label for="options">Dropdown options</label>
             <textarea id="options" name="options" rows="3" placeholder="One per line, e.g.&#10;Acme Corp&#10;Globex&#10;Initech"></textarea>
             <small>One per line. Used only for the <strong>select</strong> (dropdown) type; ignored otherwise.</small>
+        </div>
+        <div class="form-group" style="margin-top: 1rem;">
+            <label class="checkbox-row">
+                <input type="checkbox" name="required" value="true">
+                Required (users must fill this in before saving)
+            </label>
         </div>
         <div style="margin-top: 1rem;">
             <button class="button-primary" type="submit">Add field</button>

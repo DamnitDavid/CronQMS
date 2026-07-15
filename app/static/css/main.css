@@ -718,6 +718,11 @@ table.data-table tbody tr.overdue td:first-child {
     min-width: 170px;
 }
 
+/* Custom filter controls flow into the same flex row as the built-in ones. */
+.filter-custom {
+    display: contents;
+}
+
 .filter-form button {
     height: 40px;
 }
@@ -762,6 +767,75 @@ table.data-table tbody tr.overdue td:first-child {
 .badge.cf-number { background: var(--ok-soft); color: var(--ok); }
 .badge.cf-boolean { background: var(--warn-soft); color: var(--warn); }
 .badge.cf-select { background: var(--primary-soft); color: var(--primary); }
+.badge.cf-date { background: var(--neutral-soft); color: var(--neutral); }
+
+.req-star {
+    color: var(--danger);
+    font-size: 0.85em;
+}
+
+/* Settings sub-navigation tabs */
+.settings-tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.5rem;
+}
+
+.settings-tabs a {
+    padding: 0.55rem 0.9rem;
+    color: var(--muted);
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+}
+
+.settings-tabs a:hover {
+    color: var(--text);
+    text-decoration: none;
+}
+
+.settings-tabs a.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+/* Member chips (assignee groups) */
+.chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.35rem 0.25rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--surface-2);
+    font-size: 0.85rem;
+}
+
+.chip-x {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.chip-x:hover {
+    background: var(--danger-soft);
+    color: var(--danger);
+}
 
 /* CAPA statuses */
 .badge.capa-Open { background: var(--info-soft); color: var(--info); }

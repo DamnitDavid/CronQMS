@@ -22,6 +22,7 @@ class CustomFieldType(str, Enum):
     NUMBER = "number"
     BOOLEAN = "boolean"
     SELECT = "select"
+    DATE = "date"
 
 
 class CustomField(Base):
@@ -50,6 +51,7 @@ class CustomField(Base):
     key = Column(String(100), nullable=False)
     field_type = Column(String(20), nullable=False, default=CustomFieldType.TEXT.value)
     options = Column(Text, nullable=True)
+    required = Column(Boolean, nullable=False, default=False)
     display_order = Column(Integer, nullable=False, default=0)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

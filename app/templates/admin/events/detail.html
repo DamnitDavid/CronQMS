@@ -51,7 +51,15 @@
 
 <section class="detail-grid">
     <div class="field"><div class="label">Reporter</div><div class="value">{{ user_emails.get(event.reported_by, event.reported_by) }}</div></div>
-    <div class="field"><div class="label">Assignee</div><div class="value">{{ user_emails.get(event.assigned_to, "Unassigned") }}</div></div>
+    <div class="field"><div class="label">Assignee</div><div class="value">
+        {%- if event.assigned_group_id and event.assigned_group -%}
+            {{ event.assigned_group.name }} <span class="muted">(group)</span>
+        {%- elif event.assigned_to -%}
+            {{ user_emails.get(event.assigned_to, event.assigned_to) }}
+        {%- else -%}
+            Unassigned
+        {%- endif -%}
+    </div></div>
     <div class="field"><div class="label">Priority</div><div class="value"><span class="badge prio-{{ event.priority }}">{{ event.priority }}</span></div></div>
     <div class="field"><div class="label">Target Close</div><div class="value">{{ event.target_close_date or "—" }}</div></div>
     <div class="field"><div class="label">Days Open</div><div class="value">{{ event.days_open }}</div></div>

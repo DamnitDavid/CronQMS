@@ -1,0 +1,65 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Settings — Assignee Groups{% endblock %}
+{% set active_nav = "settings" %}
+{% set settings_tab = "groups" %}
+
+{% block admin_content %}
+{% include "admin/settings/_tabs.html" %}
+
+{% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
+
+<section class="card">
+    <h2>Assignee Groups</h2>
+    <p class="muted">Group users into teams so events can be assigned to a whole team.
+        Groups are optional — an event can still be assigned to a single user.</p>
+</section>
+
+{% for group in groups %}
+<section class="card">
+    <div class="section-title">
+        <h3>{{ group.name }}</h3>
+        <form method="post" action="/admin/settings/groups/{{ group.id }}/delete"
+              onsubmit="return confirm('Delete group “{{ group.name }}”?');">
+            <button class="button-secondary button-sm" type="submit">Delete group</button>
+        </form>
+    </div>
+
+    {% if group.members %}
+    <div class="chip-row">
+        {% for m in group.members %}
+        <span class="chip">
+            {{ m.email }}
+            <form method="post" action="/admin/settings/groups/{{ group.id }}/members/remove" style="display:inline;">
+                <input type="hidden" name="user_id" value="{{ m.id }}">
+                <button class="chip-x" type="submit" title="Remove">×</button>
+            </form>
+        </span>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">No members yet.</p>
+    {% endif %}
+
+    <form method="post" action="/admin/settings/groups/{{ group.id }}/members/add" class="inline-form" style="margin-top: 1rem;">
+        <select name="user_id" required>
+            <option value="">Add a member…</option>
+            {% for u in users %}
+            <option value="{{ u.id }}">{{ u.email }}</option>
+            {% endfor %}
+        </select>
+        <button class="button-secondary button-sm" type="submit">Add</button>
+    </form>
+</section>
+{% else %}
+<section class="card"><p class="muted">No groups yet. Create one below.</p></section>
+{% endfor %}
+
+<section class="card" style="max-width: 520px;">
+    <h3>Create a group</h3>
+    <form method="post" action="/admin/settings/groups" class="inline-form">
+        <input type="text" name="name" placeholder="e.g. Line 3 Quality Team" required style="flex: 1;">
+        <button class="button-primary" type="submit">Create group</button>
+    </form>
+</section>
+{% endblock %}

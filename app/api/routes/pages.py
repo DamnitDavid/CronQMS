@@ -9,22 +9,24 @@ dependencies as the API so behavior can't drift between the two.
 import hashlib
 import os
 import uuid
-from datetime import date
+from datetime import date, timedelta
 from typing import Optional
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, Form, Request, UploadFile, status
+from fastapi import APIRouter, Depends, Form, Query, Request, UploadFile, status
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.api.routes.setup import admin_exists
 from app.core.auth import get_current_user_optional
 from app.core.permissions import Permission, require_permission, role_has_permission
-from app.core.sla import sla_target
 from app.core.storage import get_storage
 from app.database import get_db
-from app.models import Attachment, Comment, Event, EventHistory, Site, User
+from app.models import Attachment, Comment, Event, EventCustomValue, Site, User
+from app.models import EventHistory
+from app.models.custom_field import CustomFieldType
 from app.models.event import EventStatus, EventType
 from app.models.user import Role
 from app.services.custom_fields import fields_for, save_values, values_for
@@ -78,6 +80,37 @@ def _permission_flags(user: User) -> dict:
 def _org_user_emails(db: Session, organization_id: int) -> dict[int, str]:
     users = db.query(User).filter(User.organization_id == organization_id).all()
     return {u.id: u.email for u in users}
+
+
+def _org_groups(db: Session, organization_id: int):
+    """Active assignee groups for an organization (for the assignee dropdown)."""
+    from app.models import AssigneeGroup
+
+    return (
+        db.query(AssigneeGroup)
+        .filter(
+            AssigneeGroup.organization_id == organization_id,
+            AssigneeGroup.is_active.is_(True),
+        )
+        .order_by(AssigneeGroup.name.asc())
+        .all()
+    )
+
+
+def _parse_assignee(value: Optional[str]) -> tuple[Optional[int], Optional[int]]:
+    """Parse a combined assignee value into (assigned_to, assigned_group_id).
+
+    The form encodes a single choice as ``user:<id>`` or ``group:<id>``; an empty
+    value means unassigned. At most one of the two ids is set.
+    """
+    if not value:
+        return None, None
+    kind, _, raw = value.partition(":")
+    if kind == "user" and raw.isdigit():
+        return int(raw), None
+    if kind == "group" and raw.isdigit():
+        return None, int(raw)
+    return None, None
 
 
 def _to_int(value: Optional[str]) -> Optional[int]:
@@ -155,23 +188,116 @@ async def event_custom_fields_fragment(
 
 
 # --- event list & create ---------------------------------------------------
+def _assignee_labels(db: Session, events: list[Event], organization_id: int) -> dict[int, str]:
+    """Map each event id to a display label for its assignee (user or group)."""
+    from app.models import AssigneeGroup
+
+    emails = _org_user_emails(db, organization_id)
+    group_names = {
+        g.id: g.name
+        for g in db.query(AssigneeGroup).filter(
+            AssigneeGroup.organization_id == organization_id
+        )
+    }
+    labels: dict[int, str] = {}
+    for event in events:
+        if event.assigned_group_id:
+            labels[event.id] = group_names.get(event.assigned_group_id, "Group")
+        elif event.assigned_to:
+            labels[event.id] = emails.get(event.assigned_to, str(event.assigned_to))
+        else:
+            labels[event.id] = "Unassigned"
+    return labels
+
+
+def _apply_custom_field_filters(db: Session, query, organization_id: int, event_type: str, params):
+    """Constrain ``query`` by any ``cf_<id>`` filters present in ``params``."""
+    if not event_type or event_type not in EVENT_TYPE_VALUES:
+        return query
+    for field in fields_for(db, organization_id, event_type):
+        raw = (params.get(f"cf_{field.id}") or "").strip()
+        if not raw:
+            continue
+        value_col = EventCustomValue.value
+        if field.field_type in (CustomFieldType.TEXT.value, CustomFieldType.NUMBER.value):
+            condition = value_col.ilike(f"%{raw}%")
+        else:
+            condition = value_col == raw
+        subquery = (
+            db.query(EventCustomValue.event_id)
+            .filter(EventCustomValue.custom_field_id == field.id, condition)
+        )
+        query = query.filter(Event.id.in_(subquery))
+    return query
+
+
 @router.get("/admin/events")
 async def admin_events_page(
     request: Request,
     current_user: User = Depends(require_permission(Permission.EVENT_READ)),
     db: Session = Depends(get_db),
+    search: Optional[str] = None,
+    status_filter: Optional[str] = Query(None, alias="status"),
+    priority: Optional[str] = None,
+    event_type: Optional[str] = None,
 ):
-    events = (
-        db.query(Event)
-        .filter(Event.organization_id == current_user.organization_id, Event.is_active.is_(True))
-        .order_by(Event.updated_at.desc())
-        .limit(50)
-        .all()
+    query = db.query(Event).filter(
+        Event.organization_id == current_user.organization_id,
+        Event.is_active.is_(True),
+    )
+    if status_filter:
+        query = query.filter(Event.status == status_filter)
+    if priority:
+        query = query.filter(Event.priority == priority)
+    if event_type:
+        query = query.filter(Event.event_type == event_type)
+    if search:
+        query = query.filter(
+            or_(Event.title.ilike(f"%{search}%"), Event.description.ilike(f"%{search}%"))
+        )
+    query = _apply_custom_field_filters(
+        db, query, current_user.organization_id, event_type, request.query_params
+    )
+    events = query.order_by(Event.updated_at.desc()).limit(50).all()
+    context = {
+        "request": request,
+        "current_user": current_user,
+        "events": events,
+        "assignee_labels": _assignee_labels(db, events, current_user.organization_id),
+        "can_create": _permission_flags_create(current_user),
+        "event_types": sorted(EVENT_TYPE_VALUES),
+        "filters": {
+            "search": search or "",
+            "status": status_filter or "",
+            "priority": priority or "",
+            "event_type": event_type or "",
+        },
+        "filter_fields": (
+            fields_for(db, current_user.organization_id, event_type)
+            if event_type in EVENT_TYPE_VALUES else []
+        ),
+        "filter_values": request.query_params,
+    }
+    # htmx swaps only the table; a direct navigation gets the whole page.
+    template = "admin/events/_event_table.html" if "HX-Request" in request.headers else "admin/events/list.html"
+    return templates.TemplateResponse(template, context)
+
+
+@router.get("/admin/events/filter-fields")
+async def event_filter_fields_fragment(
+    request: Request,
+    current_user: User = Depends(require_permission(Permission.EVENT_READ)),
+    db: Session = Depends(get_db),
+    event_type: Optional[str] = None,
+):
+    """Custom-field filter controls for an event type (htmx swap target)."""
+    fields = (
+        fields_for(db, current_user.organization_id, event_type)
+        if event_type in EVENT_TYPE_VALUES else []
     )
     return templates.TemplateResponse(
-        "admin/events/list.html",
-        {"request": request, "current_user": current_user, "events": events,
-         "can_create": _permission_flags_create(current_user)},
+        "admin/events/_filter_fields.html",
+        {"request": request, "filter_fields": fields, "filter_values": request.query_params},
     )
 
 
@@ -199,6 +325,7 @@ async def admin_events_create_page(
             "current_user": current_user,
             "sites": sites,
             "users": users,
+            "groups": _org_groups(db, current_user.organization_id),
             "event_types": sorted(EVENT_TYPE_VALUES),
             "selected_type": default_type,
             "custom_fields": fields_for(db, current_user.organization_id, default_type),
@@ -223,7 +350,7 @@ async def admin_events_create_submit(
     description: str = Form(""),
     event_type: str = Form("Non_Conformance"),
     priority: str = Form("Medium"),
-    assigned_to: Optional[str] = Form(None),
+    assignee: Optional[str] = Form(None),
     site_id: Optional[str] = Form(None),
     target_close_date: Optional[str] = Form(None),
     product_part_number: str = Form(""),
@@ -234,17 +361,19 @@ async def admin_events_create_submit(
 ):
     if event_type not in EVENT_TYPE_VALUES:
         event_type = EventType.NON_CONFORMANCE.value
+    assigned_to, assigned_group_id = _parse_assignee(assignee)
     event = Event(
         title=title,
         description=description or None,
         event_type=event_type,
         status=EventStatus.OPEN.value,
         priority=priority,
-        assigned_to=_to_int(assigned_to),
+        assigned_to=assigned_to,
+        assigned_group_id=assigned_group_id,
         site_id=_to_int(site_id),
         organization_id=current_user.organization_id,
         reported_by=current_user.id,
-        target_close_date=_to_date(target_close_date) or sla_target(priority, date.today()),
+        target_close_date=_to_date(target_close_date) or (date.today() + timedelta(days=30)),
         product_part_number=product_part_number or None,
         lot_batch=lot_batch or None,
         supplier=supplier or None,
@@ -322,6 +451,7 @@ async def event_edit_page(
             "event": event,
             "sites": sites,
             "users": users,
+            "groups": _org_groups(db, current_user.organization_id),
             "event_types": sorted(EVENT_TYPE_VALUES),
             "custom_fields": fields_for(db, current_user.organization_id, event.event_type),
             "custom_values": values_for(db, event.id),
@@ -339,7 +469,7 @@ async def event_edit_submit(
     description: str = Form(""),
     event_type: str = Form(...),
     priority: str = Form(...),
-    assigned_to: Optional[str] = Form(None),
+    assignee: Optional[str] = Form(None),
     site_id: Optional[str] = Form(None),
     target_close_date: Optional[str] = Form(None),
     product_part_number: str = Form(""),
@@ -351,11 +481,13 @@ async def event_edit_submit(
     event = _event_or_404(db, event_id, current_user)
     if event_type not in EVENT_TYPE_VALUES:
         event_type = event.event_type
+    assigned_to, assigned_group_id = _parse_assignee(assignee)
     event.title = title
     event.description = description or None
     event.event_type = event_type
     event.priority = priority
-    event.assigned_to = _to_int(assigned_to)
+    event.assigned_to = assigned_to
+    event.assigned_group_id = assigned_group_id
     event.site_id = _to_int(site_id)
     event.target_close_date = _to_date(target_close_date)
     event.product_part_number = product_part_number or None

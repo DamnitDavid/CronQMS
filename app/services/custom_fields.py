@@ -5,6 +5,7 @@ persistence with per-type coercion/validation, and display formatting.
 """
 
 import re
+from datetime import date
 
 from sqlalchemy.orm import Session
 
@@ -93,6 +94,13 @@ def _coerce(field: CustomField, raw) -> tuple[str | None, str | None]:
             return None, f"{field.label} must be one of the allowed options."
         return text, None
 
+    if field.field_type == CustomFieldType.DATE.value:
+        try:
+            date.fromisoformat(text)
+        except ValueError:
+            return None, f"{field.label} must be a valid date."
+        return text, None
+
     return text, None
 
 
@@ -114,6 +122,8 @@ def save_values(db: Session, event, fields: list[CustomField], form) -> str | No
         stored, error = _coerce(field, raw)
         if error:
             return error
+        if field.required and stored is None:
+            return f"{field.label} is required."
         row = existing.get(field.id)
         if stored is None:
             if row is not None:
