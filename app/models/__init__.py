@@ -7,6 +7,7 @@ from app.models.capa import Capa, CapaStatus, VerificationOutcome, capa_events
 from app.models.attachment import Attachment
 from app.models.comment import Comment
 from app.models.event_history import EventHistory
+from app.models.custom_field import CustomField, CustomFieldType, EventCustomValue
 
 # Wire the audit choke point once, after the models are defined. CAPAs are
 # audited from birth alongside events.
@@ -28,4 +29,7 @@ __all__ = [
     "Attachment",
     "Comment",
     "EventHistory",
+    "CustomField",
+    "CustomFieldType",
+    "EventCustomValue",
 ]

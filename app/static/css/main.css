@@ -757,6 +757,47 @@ table.data-table tbody tr.overdue td:first-child {
 .badge.prio-High { background: var(--warn-soft); color: var(--warn); }
 .badge.prio-Critical { background: var(--danger-soft); color: var(--danger); }
 
+/* Custom-field types */
+.badge.cf-text { background: var(--info-soft); color: var(--info); }
+.badge.cf-number { background: var(--ok-soft); color: var(--ok); }
+.badge.cf-boolean { background: var(--warn-soft); color: var(--warn); }
+
+/* CAPA statuses */
+.badge.capa-Open { background: var(--info-soft); color: var(--info); }
+.badge.capa-In_Progress { background: var(--warn-soft); color: var(--warn); }
+.badge.capa-Pending_Verification { background: var(--warn-soft); color: var(--warn); }
+.badge.capa-Closed { background: var(--ok-soft); color: var(--ok); }
+.badge.capa-Cancelled { background: var(--neutral-soft); color: var(--neutral); }
+
+/* Boolean custom-field input row */
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+}
+
+.checkbox-row input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+.report-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.85em;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 0.1rem 0.4rem;
+}
+
 /* ==========================================================================
    Event detail bits (promoted from the old inline styles)
    ========================================================================== */

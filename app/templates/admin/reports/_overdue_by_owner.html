@@ -1,0 +1,14 @@
+{% if rows %}
+<div class="table-scroll">
+    <table class="data-table">
+        <thead><tr><th>Owner</th><th class="num">Overdue events</th></tr></thead>
+        <tbody>
+            {% for row in rows %}
+            <tr><td>{{ row.owner }}</td><td class="num">{{ row.count }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="muted">No overdue events. 🎉</p>
+{% endif %}
