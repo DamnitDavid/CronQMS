@@ -18,6 +18,10 @@
 <section class="card action-bar">
     {% if perms.can_edit %}<a class="button-secondary" href="/admin/events/{{ event.id }}/edit">Edit</a>{% endif %}
 
+    {% if perms.can_create_alert and event.event_type == "CAPA" %}
+    <a class="button-primary" href="/admin/events/{{ event.id }}/alerts/new">Create Alert</a>
+    {% endif %}
+
     {% if perms.can_change_status and event.status == "Open" %}
     <form method="post" action="/admin/events/{{ event.id }}/status">
         <input type="hidden" name="status" value="In_Progress">

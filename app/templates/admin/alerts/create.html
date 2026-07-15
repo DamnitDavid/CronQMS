@@ -1,0 +1,88 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Create Alert{% endblock %}
+{% set active_nav = "alerts" %}
+
+{% block page_heading %}
+<h1>Create Quality/Safety Alert</h1>
+<div class="crumb">
+    <a href="/admin/events/{{ event.id }}">Event #{{ event.id }}</a> &middot; {{ event.title }}
+</div>
+{% endblock %}
+
+{% block admin_content %}
+{% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
+
+<form class="card" method="post" action="/admin/events/{{ event.id }}/alerts" style="max-width: 820px;">
+    <div class="form-group">
+        <label for="title">Alert Title</label>
+        <input type="text" id="title" name="title" required minlength="3" value="{{ event.title }}">
+    </div>
+
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="alert_type">Alert Type</label>
+            <select id="alert_type" name="alert_type">
+                {% for t in alert_types %}
+                <option value="{{ t }}">{{ t }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="severity">Severity</label>
+            <select id="severity" name="severity">
+                {% for s in severities %}
+                <option value="{{ s }}" {% if s == "Medium" %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="affected_product">Affected Product / Part</label>
+            <input type="text" id="affected_product" name="affected_product"
+                   value="{{ event.product_part_number or '' }}">
+        </div>
+        <div class="form-group">
+            <label for="affected_lot_batch">Affected Lot / Batch</label>
+            <input type="text" id="affected_lot_batch" name="affected_lot_batch"
+                   value="{{ event.lot_batch or '' }}">
+        </div>
+        <div class="form-group">
+            <label for="response_due_date">Response Due Date</label>
+            <input type="date" id="response_due_date" name="response_due_date">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="description">Description of Issue</label>
+        <textarea id="description" name="description">{{ event.description or '' }}</textarea>
+    </div>
+    <div class="form-group">
+        <label for="containment_actions">Immediate / Containment Actions</label>
+        <textarea id="containment_actions" name="containment_actions"></textarea>
+    </div>
+    <div class="form-group">
+        <label for="required_actions">Required Actions for Recipients</label>
+        <textarea id="required_actions" name="required_actions"></textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="recipient_group_ids">Recipient Group(s)</label>
+        {% if groups %}
+        <select id="recipient_group_ids" name="recipient_group_ids" multiple required size="{{ [groups|length, 6]|min }}">
+            {% for g in groups %}
+            <option value="{{ g.id }}">{{ g.name }}</option>
+            {% endfor %}
+        </select>
+        <small>Hold Ctrl (Cmd on Mac) to select more than one group. Every member is notified.</small>
+        {% else %}
+        <p class="muted">No groups exist yet. Create one under
+            <a href="/admin/settings/groups">Settings &rsaquo; Groups</a> before issuing an alert.</p>
+        {% endif %}
+    </div>
+
+    <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+        <button class="button-primary" type="submit" {% if not groups %}disabled{% endif %}>Issue Alert</button>
+        <a class="button-secondary" href="/admin/events/{{ event.id }}">Cancel</a>
+    </div>
+</form>
+{% endblock %}

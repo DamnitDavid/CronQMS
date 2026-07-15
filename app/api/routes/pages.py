@@ -73,6 +73,7 @@ def _permission_flags(user: User) -> dict:
         "can_close": Permission.EVENT_APPROVE_CLOSURE,
         "can_reopen": Permission.EVENT_REOPEN,
         "can_comment": Permission.EVENT_COMMENT,
+        "can_create_alert": Permission.ALERT_CREATE,
     }
     return {name: bool(role and role_has_permission(role, perm)) for name, perm in checks.items()}
 

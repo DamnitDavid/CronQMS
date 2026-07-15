@@ -9,13 +9,23 @@ from app.models.comment import Comment
 from app.models.event_history import EventHistory
 from app.models.custom_field import CustomField, CustomFieldType, EventCustomValue
 from app.models.assignee_group import AssigneeGroup, assignee_group_members
+from app.models.alert import (
+    Alert,
+    AlertAcknowledgement,
+    AlertSeverity,
+    AlertStatus,
+    AlertType,
+    Notification,
+    alert_recipient_groups,
+)
 
-# Wire the audit choke point once, after the models are defined. CAPAs are
-# audited from birth alongside events.
+# Wire the audit choke point once, after the models are defined. CAPAs and
+# alerts are audited from birth alongside events.
 from app.core.audit import register_auditing
 
 register_auditing(Event)
 register_auditing(Capa)
+register_auditing(Alert)
 
 __all__ = [
     "User",
@@ -35,4 +45,11 @@ __all__ = [
     "EventCustomValue",
     "AssigneeGroup",
     "assignee_group_members",
+    "Alert",
+    "AlertAcknowledgement",
+    "AlertType",
+    "AlertSeverity",
+    "AlertStatus",
+    "Notification",
+    "alert_recipient_groups",
 ]
