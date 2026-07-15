@@ -1,0 +1,41 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Alerts{% endblock %}
+{% set active_nav = "alerts" %}
+
+{% block page_heading %}
+<h1>Quality/Safety Alerts</h1>
+{% endblock %}
+
+{% block admin_content %}
+<section class="card">
+    {% if alerts %}
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Ref</th><th>Title</th><th>Type</th><th>Severity</th>
+                    <th>Status</th><th>Response Due</th><th>Issued</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in alerts %}
+                <tr>
+                    <td><a href="/admin/alerts/{{ a.id }}">{{ a.reference }}</a></td>
+                    <td><a href="/admin/alerts/{{ a.id }}">{{ a.title }}</a></td>
+                    <td>{{ a.alert_type }}</td>
+                    <td><span class="badge prio-{{ a.severity }}">{{ a.severity }}</span></td>
+                    <td><span class="badge status-{{ a.status }}">{{ a.status }}</span></td>
+                    <td>{{ a.response_due_date or "—" }}</td>
+                    <td>{{ a.created_at.strftime('%Y-%m-%d') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="muted">No alerts have been issued. Open a CAPA event and use
+        <strong>Create Alert</strong> to issue one.</p>
+    {% endif %}
+</section>
+{% endblock %}

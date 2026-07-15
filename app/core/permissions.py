@@ -28,6 +28,10 @@ class Permission(str, Enum):
     CAPA_READ = "capa:read"
     CAPA_UPDATE = "capa:update"
     CAPA_VERIFY = "capa:verify"
+    ALERT_CREATE = "alert:create"
+    ALERT_READ = "alert:read"
+    ALERT_ACKNOWLEDGE = "alert:acknowledge"
+    ALERT_CLOSE = "alert:close"
     USER_MANAGE = "user:manage"
     SETTINGS_MANAGE = "settings:manage"
     DASHBOARD_VIEW = "dashboard:view"
@@ -50,6 +54,10 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.CAPA_READ,
         Permission.CAPA_UPDATE,
         Permission.CAPA_VERIFY,
+        Permission.ALERT_CREATE,
+        Permission.ALERT_READ,
+        Permission.ALERT_ACKNOWLEDGE,
+        Permission.ALERT_CLOSE,
         Permission.DASHBOARD_VIEW,
     },
     Role.INVESTIGATOR: {
@@ -61,6 +69,9 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.CAPA_CREATE,
         Permission.CAPA_READ,
         Permission.CAPA_UPDATE,
+        Permission.ALERT_CREATE,
+        Permission.ALERT_READ,
+        Permission.ALERT_ACKNOWLEDGE,
         Permission.DASHBOARD_VIEW,
     },
     Role.APPROVER: {
@@ -70,11 +81,14 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.EVENT_COMMENT,
         Permission.CAPA_READ,
         Permission.CAPA_VERIFY,
+        Permission.ALERT_READ,
+        Permission.ALERT_ACKNOWLEDGE,
         Permission.DASHBOARD_VIEW,
     },
     Role.VIEWER: {
         Permission.EVENT_READ,
         Permission.CAPA_READ,
+        Permission.ALERT_READ,
         Permission.DASHBOARD_VIEW,
     },
 }

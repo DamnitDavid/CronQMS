@@ -1,0 +1,103 @@
+{% extends "base_admin.html" %}
+
+{% block title %}{{ alert.reference }} — {{ alert.title }}{% endblock %}
+{% set active_nav = "alerts" %}
+
+{% block page_heading %}
+<h1>{{ alert.title }}</h1>
+<div class="crumb">
+    <a href="/admin/alerts">Alerts</a> &middot; {{ alert.reference }} &middot; {{ alert.alert_type }}
+    &middot; <span class="badge status-{{ alert.status }}">{{ alert.status }}</span>
+    &middot; <span class="badge prio-{{ alert.severity }}">{{ alert.severity }}</span>
+</div>
+{% endblock %}
+
+{% block admin_content %}
+{% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
+
+<section class="card action-bar">
+    <a class="button-secondary" href="/admin/alerts/{{ alert.id }}/print" target="_blank" rel="noopener">Print / Signature Page</a>
+    {% if perms.can_close and alert.status != "Closed" %}
+    <form method="post" action="/admin/alerts/{{ alert.id }}/close">
+        <button class="button-primary" type="submit">Close Alert</button>
+    </form>
+    {% endif %}
+</section>
+
+<section class="detail-grid">
+    <div class="field"><div class="label">Reference</div><div class="value">{{ alert.reference }}</div></div>
+    <div class="field"><div class="label">Source Event</div><div class="value">
+        <a href="/admin/events/{{ alert.event_id }}">#{{ alert.event_id }} {{ alert.event.title }}</a>
+    </div></div>
+    <div class="field"><div class="label">Issued By</div><div class="value">{{ user_emails.get(alert.issued_by, alert.issued_by) }}</div></div>
+    <div class="field"><div class="label">Response Due</div><div class="value">{{ alert.response_due_date or "—" }}</div></div>
+    <div class="field"><div class="label">Affected Product</div><div class="value">{{ alert.affected_product or "—" }}</div></div>
+    <div class="field"><div class="label">Affected Lot / Batch</div><div class="value">{{ alert.affected_lot_batch or "—" }}</div></div>
+    <div class="field"><div class="label">Issued</div><div class="value">{{ alert.created_at.strftime('%Y-%m-%d') }}</div></div>
+</section>
+
+<section class="card">
+    <h2>Description</h2>
+    <p>{{ alert.description or "No description provided." }}</p>
+</section>
+
+<section class="card">
+    <h2>Immediate / Containment Actions</h2>
+    <p>{{ alert.containment_actions or "—" }}</p>
+</section>
+
+<section class="card">
+    <h2>Required Actions for Recipients</h2>
+    <p>{{ alert.required_actions or "—" }}</p>
+</section>
+
+<section class="card">
+    <h2>Recipient Groups</h2>
+    {% if alert.recipient_groups %}
+    <ul>
+        {% for g in alert.recipient_groups %}
+        <li>{{ g.name }} <span class="muted">({{ g.members|length }} member(s))</span></li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">No recipient groups.</p>
+    {% endif %}
+</section>
+
+<section class="card">
+    <h2>Signed Acknowledgements</h2>
+    {% if alert.acknowledgements %}
+    <ul>
+        {% for a in alert.acknowledgements %}
+        <li>
+            <a href="/api/alert-acknowledgements/{{ a.id }}/download">{{ a.filename }}</a>
+            <span class="muted">
+                by {{ user_emails.get(a.submitted_by, a.submitted_by) }}
+                {% if a.group %}for {{ a.group.name }}{% endif %}
+                &middot; {{ a.created_at.strftime('%Y-%m-%d %H:%M') }}
+                &middot; {{ a.size_bytes }} bytes &middot; sha256 {{ a.checksum[:12] }}…
+            </span>
+            {% if a.note %}<div>{{ a.note }}</div>{% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">No signed documents submitted yet.</p>
+    {% endif %}
+
+    {% if perms.can_acknowledge %}
+    <form method="post" action="/admin/alerts/{{ alert.id }}/acknowledgements"
+          enctype="multipart/form-data" class="inline-form" style="margin-top: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+        <select name="group_id">
+            <option value="">On behalf of… (optional)</option>
+            {% for g in alert.recipient_groups %}
+            <option value="{{ g.id }}">{{ g.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" name="note" placeholder="Note (optional)">
+        <input type="file" name="file" required>
+        <button class="button-secondary" type="submit">Upload Signed Document</button>
+    </form>
+    {% endif %}
+</section>
+{% endblock %}

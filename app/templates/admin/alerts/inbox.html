@@ -1,0 +1,38 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Inbox{% endblock %}
+{% set active_nav = "inbox" %}
+
+{% block page_heading %}
+<h1>Notifications</h1>
+{% endblock %}
+
+{% block admin_content %}
+<section class="card">
+    {% if notifications %}
+    <div class="thread">
+        {% for n in notifications %}
+        <div class="comment" style="{% if not n.is_read %}border-left: 3px solid var(--accent, #1d4ed8); padding-left: 0.75rem;{% endif %}">
+            <div class="meta">
+                {{ n.created_at.strftime('%Y-%m-%d %H:%M') }}
+                {% if not n.is_read %}&middot; <strong>New</strong>{% endif %}
+            </div>
+            <div><strong>{{ n.subject }}</strong></div>
+            {% if n.body %}<div>{{ n.body }}</div>{% endif %}
+            {% if n.alert_id %}
+            <form method="post" action="/admin/inbox/{{ n.id }}/read" style="margin-top: 0.4rem;">
+                <button class="button-secondary" type="submit">View Alert</button>
+            </form>
+            {% elif not n.is_read %}
+            <form method="post" action="/admin/inbox/{{ n.id }}/read" style="margin-top: 0.4rem;">
+                <button class="button-secondary" type="submit">Mark as read</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">Your inbox is empty.</p>
+    {% endif %}
+</section>
+{% endblock %}

@@ -12,7 +12,7 @@ import os
 from app.config import get_settings
 from app.core.auth import get_current_user_optional
 from app.database import get_db
-from app.api.routes import admin, admin_pages, attachments, auth, capas, comments, events, pages, reports, setup, users
+from app.api.routes import admin, admin_pages, alerts, attachments, auth, capas, comments, events, pages, reports, setup, users
 from app.api.routes.setup import admin_exists
 
 settings = get_settings()
@@ -64,6 +64,7 @@ if os.path.exists(static_dir):
 app.include_router(auth.router)
 app.include_router(events.router)
 app.include_router(capas.router)
+app.include_router(alerts.router)
 app.include_router(attachments.router)
 app.include_router(comments.router)
 app.include_router(reports.router)
