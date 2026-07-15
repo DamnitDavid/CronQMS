@@ -48,16 +48,17 @@ class CustomFieldsTest(unittest.TestCase):
         if os.path.exists(db_path):
             os.remove(db_path)
 
-    def _add_field(self, label, field_type, event_type="Non_Conformance", options=""):
+    def _add_field(self, label, field_type, event_type="Non_Conformance", options="", required=False):
+        data = {
+            "event_type": event_type,
+            "label": label,
+            "field_type": field_type,
+            "options": options,
+        }
+        if required:
+            data["required"] = "true"
         return self.client.post(
-            "/admin/settings/custom-fields",
-            data={
-                "event_type": event_type,
-                "label": label,
-                "field_type": field_type,
-                "options": options,
-            },
-            follow_redirects=False,
+            "/admin/settings/custom-fields", data=data, follow_redirects=False
         )
 
     def _field_id(self, label):
@@ -195,6 +196,50 @@ class CustomFieldsTest(unittest.TestCase):
         self.client.post(f"/admin/settings/custom-fields/{fid}/delete", follow_redirects=False)
         frag = self.client.get("/admin/events/custom-fields?event_type=Non_Conformance")
         self.assertNotIn(f"cf_{fid}", frag.text)
+
+    def test_required_field_blocks_empty_save(self):
+        self._add_field("Root cause code", "text", required=True)
+        fid = self._field_id("Root cause code")
+        # Empty required field -> rejected.
+        bad = self.client.post(
+            "/admin/events/create",
+            data={"title": "Missing rc", "event_type": "Non_Conformance",
+                  "priority": "Low", f"cf_{fid}": ""},
+            follow_redirects=False,
+        )
+        self.assertEqual(bad.status_code, 303)
+        self.assertIn("error", bad.headers["location"])
+        db = SessionLocal()
+        try:
+            self.assertEqual(db.query(Event).count(), 0)
+        finally:
+            db.close()
+        # Provided -> saved.
+        ok = self.client.post(
+            "/admin/events/create",
+            data={"title": "Has rc", "event_type": "Non_Conformance",
+                  "priority": "Low", f"cf_{fid}": "RC-1"},
+        )
+        self.assertEqual(ok.status_code, 200)
+
+    def test_date_field_validates(self):
+        self._add_field("Date detected", "date")
+        fid = self._field_id("Date detected")
+        bad = self.client.post(
+            "/admin/events/create",
+            data={"title": "Bad date", "event_type": "Non_Conformance",
+                  "priority": "Low", f"cf_{fid}": "not-a-date"},
+            follow_redirects=False,
+        )
+        self.assertEqual(bad.status_code, 303)
+        self.assertIn("error", bad.headers["location"])
+        ok = self.client.post(
+            "/admin/events/create",
+            data={"title": "Good date", "event_type": "Non_Conformance",
+                  "priority": "Low", f"cf_{fid}": "2026-07-10"},
+        )
+        self.assertEqual(ok.status_code, 200)
+        self.assertIn("2026-07-10", ok.text)
 
     def test_viewer_cannot_access_settings(self):
         # Admin creates a Viewer, who then logs in on a separate client.

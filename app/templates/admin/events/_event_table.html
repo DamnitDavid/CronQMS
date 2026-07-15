@@ -1,0 +1,39 @@
+<section id="eventTable" class="table-shell">
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="num">ID</th>
+                    <th>Title</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Assignee</th>
+                    <th>Target Close</th>
+                    <th>Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if events %}
+                    {% for event in events %}
+                    <tr class="{{ 'overdue' if event.is_overdue }}">
+                        <td class="num">{{ event.id }}</td>
+                        <td><a href="/admin/events/{{ event.id }}">{{ event.title }}</a></td>
+                        <td>
+                            <span class="badge status-{{ event.status }}">{{ event.status }}</span>
+                            {% if event.is_overdue %}<span class="badge overdue">Overdue</span>{% endif %}
+                        </td>
+                        <td><span class="badge prio-{{ event.priority }}">{{ event.priority }}</span></td>
+                        <td>{{ assignee_labels.get(event.id, "Unassigned") }}</td>
+                        <td>{{ event.target_close_date or "—" }}</td>
+                        <td>{{ event.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="table-empty">No events match these filters.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</section>

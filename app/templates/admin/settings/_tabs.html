@@ -1,0 +1,7 @@
+{# Sub-navigation for the Settings area. Pass `settings_tab` = "fields" | "groups". #}
+<nav class="settings-tabs">
+    <a href="/admin/settings/custom-fields"
+       class="{{ 'active' if settings_tab | default('') == 'fields' }}">Custom Fields</a>
+    <a href="/admin/settings/groups"
+       class="{{ 'active' if settings_tab | default('') == 'groups' }}">Assignee Groups</a>
+</nav>

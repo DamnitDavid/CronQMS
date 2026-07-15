@@ -12,19 +12,23 @@
             {{ field.label }}
         </label>
         {% elif field.field_type == "select" %}
-        <label for="cf_{{ field.id }}">{{ field.label }}</label>
-        <select id="cf_{{ field.id }}" name="cf_{{ field.id }}">
+        <label for="cf_{{ field.id }}">{{ field.label }}{% if field.required %} <span class="req-star">★</span>{% endif %}</label>
+        <select id="cf_{{ field.id }}" name="cf_{{ field.id }}" {% if field.required %}required{% endif %}>
             <option value="">— Select —</option>
             {% for opt in field.options.split("\n") if opt.strip() %}
             <option value="{{ opt.strip() }}" {% if custom_values.get(field.id) == opt.strip() %}selected{% endif %}>{{ opt.strip() }}</option>
             {% endfor %}
         </select>
+        {% elif field.field_type == "date" %}
+        <label for="cf_{{ field.id }}">{{ field.label }}{% if field.required %} <span class="req-star">★</span>{% endif %}</label>
+        <input id="cf_{{ field.id }}" name="cf_{{ field.id }}" type="date"
+               value="{{ custom_values.get(field.id, '') }}" {% if field.required %}required{% endif %}>
         {% else %}
-        <label for="cf_{{ field.id }}">{{ field.label }}</label>
+        <label for="cf_{{ field.id }}">{{ field.label }}{% if field.required %} <span class="req-star">★</span>{% endif %}</label>
         <input id="cf_{{ field.id }}" name="cf_{{ field.id }}"
                type="{{ 'number' if field.field_type == 'number' else 'text' }}"
                {% if field.field_type == 'number' %}step="any"{% endif %}
-               value="{{ custom_values.get(field.id, '') }}">
+               value="{{ custom_values.get(field.id, '') }}" {% if field.required %}required{% endif %}>
         {% endif %}
     </div>
     {% endfor %}

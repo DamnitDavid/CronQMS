@@ -46,12 +46,23 @@
             </select>
         </div>
         <div class="form-group">
-            <label for="assigned_to">Assignee</label>
-            <select id="assigned_to" name="assigned_to">
+            <label for="assignee">Assignee</label>
+            <select id="assignee" name="assignee">
                 <option value="">Unassigned</option>
-                {% for u in users %}
-                <option value="{{ u.id }}" {% if event.assigned_to == u.id %}selected{% endif %}>{{ u.email }}</option>
-                {% endfor %}
+                {% if users %}
+                <optgroup label="Users">
+                    {% for u in users %}
+                    <option value="user:{{ u.id }}" {% if event.assigned_to == u.id %}selected{% endif %}>{{ u.email }}</option>
+                    {% endfor %}
+                </optgroup>
+                {% endif %}
+                {% if groups %}
+                <optgroup label="Groups">
+                    {% for g in groups %}
+                    <option value="group:{{ g.id }}" {% if event.assigned_group_id == g.id %}selected{% endif %}>{{ g.name }}</option>
+                    {% endfor %}
+                </optgroup>
+                {% endif %}
             </select>
         </div>
         <div class="form-group">
