@@ -21,8 +21,9 @@ get_settings.cache_clear()
 
 from app.database import Base, SessionLocal, engine
 from app.main import app
-from app.models import Alert, AssigneeGroup, Event, Notification, User
+from app.models import Alert, AlertImage, AssigneeGroup, Event, Notification, User
 from app.models.event import EventType
+from app.services import org_settings
 
 
 class AlertsTest(unittest.TestCase):
@@ -173,22 +174,127 @@ class AlertsTest(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertIn("Empty file", resp.text)
 
-    def test_print_view_has_signature_page(self):
-        gid = self._make_group_with_member()
-        eid = self._make_capa_event()
-        self.client.post(f"/admin/events/{eid}/alerts", data={
-            "title": "Printable", "alert_type": "Quality", "severity": "Medium",
-            "recipient_group_ids": gid})
+    def _create_alert(self, title, gid, **extra):
+        data = {"title": title, "alert_type": "Quality", "severity": "Medium",
+                "recipient_group_ids": gid}
+        data.update(extra)
+        self.client.post(f"/admin/events/{self._make_capa_event()}/alerts", data=data)
         db = SessionLocal()
         try:
-            alert_id = db.query(Alert).filter(Alert.title == "Printable").first().id
+            return db.query(Alert).filter(Alert.title == title).first().id
         finally:
             db.close()
+
+    def test_signage_poster_has_no_signature_table(self):
+        gid = self._make_group_with_member()
+        alert_id = self._create_alert("Poster", gid)
         resp = self.client.get(f"/admin/alerts/{alert_id}/print")
         self.assertEqual(resp.status_code, 200)
-        self.assertIn("Signatures", resp.text)
-        self.assertIn("Line 3 Team", resp.text)
-        self.assertIn("member@acme.test", resp.text)
+        # Signage is a clean poster: no signature column headers.
+        self.assertNotIn("Signature", resp.text)
+        self.assertIn("ALERT", resp.text)
+
+    def test_blank_signoff_sheet_has_rows(self):
+        gid = self._make_group_with_member()
+        alert_id = self._create_alert("Signable sheet", gid)
+        resp = self.client.get(f"/admin/alerts/{alert_id}/signoff")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("Signature", resp.text)
+        self.assertIn("Printed Name", resp.text)
+        # 20 numbered blank rows.
+        self.assertIn(">20<", resp.text)
+
+    def test_expiry_defaults_and_override(self):
+        from datetime import date, timedelta
+        gid = self._make_group_with_member()
+        # Default: today + 14 days when no expiry supplied.
+        default_id = self._create_alert("DefaultExpiry", gid)
+        override_id = self._create_alert("OverrideExpiry", gid, expires_at="2099-01-01")
+        db = SessionLocal()
+        try:
+            default_alert = db.query(Alert).filter(Alert.id == default_id).first()
+            override_alert = db.query(Alert).filter(Alert.id == override_id).first()
+            self.assertEqual(default_alert.expires_at, date.today() + timedelta(days=14))
+            self.assertEqual(override_alert.expires_at, date(2099, 1, 1))
+        finally:
+            db.close()
+
+    def test_is_expired_flag(self):
+        gid = self._make_group_with_member()
+        alert_id = self._create_alert("PastDue", gid, expires_at="2000-01-01")
+        db = SessionLocal()
+        try:
+            self.assertTrue(db.query(Alert).filter(Alert.id == alert_id).first().is_expired)
+        finally:
+            db.close()
+        # Once closed, it's no longer flagged as expired.
+        self.client.post(f"/admin/alerts/{alert_id}/close")
+        db = SessionLocal()
+        try:
+            self.assertFalse(db.query(Alert).filter(Alert.id == alert_id).first().is_expired)
+        finally:
+            db.close()
+
+    def test_image_upload_serves_and_enforces_two_slots(self):
+        gid = self._make_group_with_member()
+        alert_id = self._create_alert("WithPhotos", gid)
+        png = b"\x89PNG\r\n\x1a\n" + b"fake-image-bytes"
+        # Upload to slot 1, then re-upload to slot 1 (replace, not add).
+        r1 = self.client.post(f"/admin/alerts/{alert_id}/images",
+                              data={"position": "1"},
+                              files={"file": ("a.png", png, "image/png")})
+        self.assertEqual(r1.status_code, 200)
+        r1b = self.client.post(f"/admin/alerts/{alert_id}/images",
+                               data={"position": "1"},
+                               files={"file": ("a2.png", png + b"x", "image/png")})
+        self.assertEqual(r1b.status_code, 200)
+        self.client.post(f"/admin/alerts/{alert_id}/images",
+                         data={"position": "2"},
+                         files={"file": ("b.png", png, "image/png")})
+        db = SessionLocal()
+        try:
+            images = db.query(AlertImage).filter(AlertImage.alert_id == alert_id).all()
+            self.assertEqual(len(images), 2)  # slot 1 replaced, not duplicated
+            img1 = next(i for i in images if i.position == 1)
+        finally:
+            db.close()
+        served = self.client.get(f"/api/alert-images/{img1.id}")
+        self.assertEqual(served.status_code, 200)
+        self.assertIn("inline", served.headers.get("content-disposition", ""))
+
+    def test_standalone_alert_gated_by_config(self):
+        gid = self._make_group_with_member()
+        # Off by default -> the new-alert page 404s.
+        self.assertEqual(self.client.get("/admin/alerts/new").status_code, 404)
+        blocked = self.client.post("/admin/alerts/new", data={
+            "title": "Nope", "alert_type": "Quality", "severity": "Low",
+            "recipient_group_ids": gid}, follow_redirects=False)
+        self.assertEqual(blocked.status_code, 404)
+        # Enable in Config, then it works and the alert has no source event.
+        self.client.post("/admin/settings/config",
+                         data={"allow_standalone_alerts": "on", "default_expiry_days": "14"})
+        self.assertEqual(self.client.get("/admin/alerts/new").status_code, 200)
+        ok = self.client.post("/admin/alerts/new", data={
+            "title": "Standalone", "alert_type": "Safety", "severity": "High",
+            "recipient_group_ids": gid})
+        self.assertEqual(ok.status_code, 200)
+        self.assertIn("N/A", ok.text)
+        db = SessionLocal()
+        try:
+            alert = db.query(Alert).filter(Alert.title == "Standalone").first()
+            self.assertIsNone(alert.event_id)
+        finally:
+            db.close()
+
+    def test_config_page_persists_settings(self):
+        self.client.post("/admin/settings/config",
+                         data={"allow_standalone_alerts": "on", "default_expiry_days": "30"})
+        db = SessionLocal()
+        try:
+            self.assertTrue(org_settings.standalone_alerts_enabled(db, 1))
+            self.assertEqual(org_settings.default_expiry_days(db, 1), 30)
+        finally:
+            db.close()
 
     def test_viewer_cannot_create_alert(self):
         gid = self._make_group_with_member()

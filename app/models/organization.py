@@ -8,7 +8,7 @@ foreign key.
 
 from datetime import datetime
 
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -50,3 +50,29 @@ class Site(Base):
 
     def __repr__(self) -> str:
         return f"<Site(id={self.id}, name={self.name}, organization_id={self.organization_id})>"
+
+
+class OrgSetting(Base):
+    """A per-organization key/value configuration entry.
+
+    A generic store for admin-managed toggles (e.g. whether standalone alerts are
+    allowed, the default alert expiry). Values are stored as strings and coerced
+    by the accessors in ``app.services.org_settings``.
+    """
+
+    __tablename__ = "org_settings"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "key", name="uq_org_settings_org_key"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(
+        Integer, ForeignKey("organizations.id"), nullable=False, index=True
+    )
+    key = Column(String(100), nullable=False)
+    value = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<OrgSetting(org={self.organization_id}, key={self.key})>"

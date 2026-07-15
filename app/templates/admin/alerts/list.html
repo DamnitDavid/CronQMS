@@ -8,6 +8,13 @@
 {% endblock %}
 
 {% block admin_content %}
+{% if standalone_enabled and perms.can_create %}
+<section class="card action-bar">
+    <a class="button-primary" href="/admin/alerts/new">Create Alert</a>
+    <span class="muted">Creates a standalone alert with no source event (Source Event: N/A).</span>
+</section>
+{% endif %}
+
 <section class="card">
     {% if alerts %}
     <div class="table-scroll">
@@ -15,7 +22,7 @@
             <thead>
                 <tr>
                     <th>Ref</th><th>Title</th><th>Type</th><th>Severity</th>
-                    <th>Status</th><th>Response Due</th><th>Issued</th>
+                    <th>Status</th><th>Response Due</th><th>Expires</th><th>Issued</th>
                 </tr>
             </thead>
             <tbody>
@@ -25,8 +32,12 @@
                     <td><a href="/admin/alerts/{{ a.id }}">{{ a.title }}</a></td>
                     <td>{{ a.alert_type }}</td>
                     <td><span class="badge prio-{{ a.severity }}">{{ a.severity }}</span></td>
-                    <td><span class="badge status-{{ a.status }}">{{ a.status }}</span></td>
+                    <td>
+                        <span class="badge status-{{ a.status }}">{{ a.status }}</span>
+                        {% if a.is_expired %}<span class="badge overdue">Expired</span>{% endif %}
+                    </td>
                     <td>{{ a.response_due_date or "—" }}</td>
+                    <td>{{ a.expires_at or "—" }}</td>
                     <td>{{ a.created_at.strftime('%Y-%m-%d') }}</td>
                 </tr>
                 {% endfor %}
@@ -35,7 +46,8 @@
     </div>
     {% else %}
     <p class="muted">No alerts have been issued. Open a CAPA event and use
-        <strong>Create Alert</strong> to issue one.</p>
+        <strong>Create Alert</strong> to issue one{% if standalone_enabled %}, or create a
+        standalone alert above{% endif %}.</p>
     {% endif %}
 </section>
 {% endblock %}

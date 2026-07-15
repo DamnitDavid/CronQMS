@@ -1,0 +1,39 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Settings — Config{% endblock %}
+{% set active_nav = "settings" %}
+{% set settings_tab = "config" %}
+
+{% block admin_content %}
+{% include "admin/settings/_tabs.html" %}
+
+{% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
+{% if saved %}<div class="alert alert-success">Configuration saved.</div>{% endif %}
+
+<section class="card" style="max-width: 640px;">
+    <h2>Alert Configuration</h2>
+    <form method="post" action="/admin/settings/config">
+        <div class="form-group">
+            <label class="inline-form" style="gap: 0.5rem; align-items: center;">
+                <input type="checkbox" name="allow_standalone_alerts" value="on"
+                       {% if allow_standalone_alerts %}checked{% endif %}>
+                Allow alerts to be created without a CAPA / source event
+            </label>
+            <small>When enabled, a <strong>Create Alert</strong> button appears on the
+                Alerts page and standalone alerts show “Source Event: N/A”.</small>
+        </div>
+
+        <div class="form-group">
+            <label for="default_expiry_days">Default alert expiry (days)</label>
+            <input type="number" id="default_expiry_days" name="default_expiry_days"
+                   min="1" value="{{ default_expiry_days }}" required style="max-width: 140px;">
+            <small>New alerts pre-fill their expiry to this many days out. The issuer can
+                still change it per alert.</small>
+        </div>
+
+        <div style="margin-top: 1rem;">
+            <button class="button-primary" type="submit">Save configuration</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

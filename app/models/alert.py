@@ -8,7 +8,7 @@ then upload the scanned, signed acknowledgement back against the alert
 (:class:`AlertAcknowledgement`).
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 
 from sqlalchemy import (
@@ -18,9 +18,11 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    SmallInteger,
     String,
     Table,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 
@@ -73,6 +75,7 @@ class Alert(Base):
         "containment_actions",
         "required_actions",
         "response_due_date",
+        "expires_at",
         "issued_by",
         "is_active",
     )
@@ -81,7 +84,8 @@ class Alert(Base):
     organization_id = Column(
         Integer, ForeignKey("organizations.id"), nullable=False, index=True
     )
-    event_id = Column(Integer, ForeignKey("events.id"), nullable=False, index=True)
+    # Nullable: an alert may be raised standalone, without a CAPA/source event.
+    event_id = Column(Integer, ForeignKey("events.id"), nullable=True, index=True)
 
     title = Column(String(255), nullable=False)
     alert_type = Column(String(20), nullable=False, default=AlertType.QUALITY.value)
@@ -95,6 +99,7 @@ class Alert(Base):
     containment_actions = Column(Text, nullable=True)
     required_actions = Column(Text, nullable=True)  # what recipients must do
     response_due_date = Column(Date, nullable=True)
+    expires_at = Column(Date, nullable=True)  # default: created + configured days
 
     issued_by = Column(Integer, ForeignKey("users.id"), nullable=False)
 
@@ -112,14 +117,60 @@ class Alert(Base):
         lazy="selectin",
         cascade="all, delete-orphan",
     )
+    images = relationship(
+        "AlertImage",
+        back_populates="alert",
+        lazy="selectin",
+        order_by="AlertImage.position",
+        cascade="all, delete-orphan",
+    )
 
     @property
     def reference(self) -> str:
         """Human-facing alert reference, e.g. ``AL-42``."""
         return f"AL-{self.id}"
 
+    @property
+    def is_expired(self) -> bool:
+        """True when past the expiry date and not yet closed."""
+        if self.expires_at is None or self.status == AlertStatus.CLOSED.value:
+            return False
+        return date.today() > self.expires_at
+
     def __repr__(self) -> str:
         return f"<Alert(id={self.id}, title={self.title}, status={self.status})>"
+
+
+class AlertImage(Base):
+    """A picture attached to an alert (max two, by position).
+
+    Records the same file metadata as :class:`~app.models.attachment.Attachment`.
+    Images are edited client-side (rotate/crop/annotate) before upload; the
+    server just stores the final blob.
+    """
+
+    __tablename__ = "alert_images"
+    __table_args__ = (
+        UniqueConstraint("alert_id", "position", name="uq_alert_images_alert_position"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    alert_id = Column(Integer, ForeignKey("alerts.id", ondelete="CASCADE"), nullable=False, index=True)
+    position = Column(SmallInteger, nullable=False)  # 1 or 2
+
+    filename = Column(String(255), nullable=False)
+    content_type = Column(String(255), nullable=True)
+    size_bytes = Column(Integer, nullable=False)
+    checksum = Column(String(64), nullable=False)  # SHA-256 hex
+    storage_key = Column(String(255), nullable=False)
+
+    uploaded_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    alert = relationship("Alert", back_populates="images")
+
+    def __repr__(self) -> str:
+        return f"<AlertImage(id={self.id}, alert={self.alert_id}, pos={self.position})>"
 
 
 class AlertAcknowledgement(Base):
