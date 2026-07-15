@@ -21,6 +21,12 @@ class Permission(str, Enum):
     EVENT_UPDATE = "event:update"
     EVENT_DELETE = "event:delete"
     EVENT_CHANGE_STATUS = "event:change_status"
+    EVENT_APPROVE_CLOSURE = "event:approve_closure"
+    EVENT_REOPEN = "event:reopen"
+    CAPA_CREATE = "capa:create"
+    CAPA_READ = "capa:read"
+    CAPA_UPDATE = "capa:update"
+    CAPA_VERIFY = "capa:verify"
     USER_MANAGE = "user:manage"
     DASHBOARD_VIEW = "dashboard:view"
 
@@ -35,6 +41,12 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.EVENT_UPDATE,
         Permission.EVENT_DELETE,
         Permission.EVENT_CHANGE_STATUS,
+        Permission.EVENT_APPROVE_CLOSURE,
+        Permission.EVENT_REOPEN,
+        Permission.CAPA_CREATE,
+        Permission.CAPA_READ,
+        Permission.CAPA_UPDATE,
+        Permission.CAPA_VERIFY,
         Permission.DASHBOARD_VIEW,
     },
     Role.INVESTIGATOR: {
@@ -42,15 +54,22 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.EVENT_READ,
         Permission.EVENT_UPDATE,
         Permission.EVENT_CHANGE_STATUS,
+        Permission.CAPA_CREATE,
+        Permission.CAPA_READ,
+        Permission.CAPA_UPDATE,
         Permission.DASHBOARD_VIEW,
     },
     Role.APPROVER: {
         Permission.EVENT_READ,
         Permission.EVENT_CHANGE_STATUS,
+        Permission.EVENT_APPROVE_CLOSURE,
+        Permission.CAPA_READ,
+        Permission.CAPA_VERIFY,
         Permission.DASHBOARD_VIEW,
     },
     Role.VIEWER: {
         Permission.EVENT_READ,
+        Permission.CAPA_READ,
         Permission.DASHBOARD_VIEW,
     },
 }
