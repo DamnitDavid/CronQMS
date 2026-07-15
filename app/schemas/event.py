@@ -1,7 +1,7 @@
 """Pydantic schemas for event-related requests and responses."""
 
 from datetime import date, datetime
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -106,3 +106,12 @@ class EventResponse(BaseModel):
         """Pydantic config."""
 
         from_attributes = True
+
+
+class PaginatedEvents(BaseModel):
+    """A page of events plus the total matching count, for UI pagination."""
+
+    total: int
+    page: int
+    page_size: int
+    items: List[EventResponse]

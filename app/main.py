@@ -9,7 +9,7 @@ import os
 
 from app.config import get_settings
 from app.core.auth import get_current_user_optional
-from app.api.routes import admin, attachments, auth, capas, comments, events, pages, users
+from app.api.routes import admin, attachments, auth, capas, comments, events, pages, reports, users
 
 settings = get_settings()
 
@@ -62,6 +62,7 @@ app.include_router(events.router)
 app.include_router(capas.router)
 app.include_router(attachments.router)
 app.include_router(comments.router)
+app.include_router(reports.router)
 app.include_router(admin.router)
 app.include_router(pages.router)
 app.include_router(users.router)

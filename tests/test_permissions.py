@@ -217,7 +217,9 @@ class PermissionMatrixTest(unittest.TestCase):
         )
         self.assertEqual(resp.status_code, 200)
         # The other org has no events of its own.
-        self.assertEqual(resp.json(), [])
+        body = resp.json()
+        self.assertEqual(body["items"], [])
+        self.assertEqual(body["total"], 0)
 
     def test_unauthenticated_is_rejected(self):
         self.assertIn(self.client.get("/api/events/").status_code, (401, 403))

@@ -18,6 +18,7 @@ from app.schemas.event import (
     EventType,
     EventPriority,
     EventUpdate,
+    PaginatedEvents,
 )
 from app.core.audit import set_audit_reason
 from app.core.permissions import Permission, require_permission
@@ -92,7 +93,7 @@ async def create_event(
     return new_event
 
 
-@router.get("/", response_model=list[EventResponse])
+@router.get("/", response_model=PaginatedEvents)
 async def list_events(
     current_user: User = Depends(require_permission(Permission.EVENT_READ)),
     db: Session = Depends(get_db),
@@ -104,8 +105,12 @@ async def list_events(
     search: Optional[str] = Query(None, min_length=1),
     date_from: Optional[date] = Query(None),
     date_to: Optional[date] = Query(None),
-) -> list[Event]:
-    """List every active event in the caller's organization, with filters."""
+) -> PaginatedEvents:
+    """List active events in the caller's organization with filters.
+
+    Returns the requested page alongside the total matching count so the UI can
+    paginate.
+    """
     query = db.query(Event).filter(
         Event.organization_id == current_user.organization_id,
         Event.is_active.is_(True),
@@ -129,13 +134,19 @@ async def list_events(
     if date_to:
         query = query.filter(Event.created_at <= date_to)
 
+    total = query.count()
     events = (
         query.order_by(Event.created_at.desc())
         .offset((page - 1) * page_size)
         .limit(page_size)
         .all()
     )
-    return events
+    return PaginatedEvents(
+        total=total,
+        page=page,
+        page_size=page_size,
+        items=[EventResponse.model_validate(event) for event in events],
+    )
 
 
 @router.get("/{event_id}", response_model=EventResponse)
