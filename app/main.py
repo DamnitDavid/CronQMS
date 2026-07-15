@@ -9,7 +9,6 @@ import os
 
 from app.config import get_settings
 from app.core.auth import get_current_user_optional
-from app.database import init_db
 from app.api.routes import admin, auth, events, pages, users
 
 settings = get_settings()
@@ -24,10 +23,10 @@ async def lifespan(app: FastAPI):
     Yields:
         None: During normal operation.
     """
-    # Startup event
+    # Startup event. Schema is owned by Alembic migrations (`alembic upgrade
+    # head`), which run before the app process starts in docker-compose, so the
+    # app no longer creates tables itself.
     print(f"Starting {settings.app_name} v{settings.app_version} ({settings.environment})")
-    init_db()
-    print("Database initialized")
 
     yield
 

@@ -1,31 +1,23 @@
 """Pydantic schemas for event-related requests and responses."""
 
-from datetime import datetime, date
-from enum import Enum
+from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
+# Enums are defined once on the model layer and re-exported here so schema
+# consumers keep importing them from ``app.schemas.event`` unchanged.
+from app.models.event import EventPriority, EventStatus, EventType
 
-class EventStatus(str, Enum):
-    OPEN = "Open"
-    IN_PROGRESS = "In_Progress"
-    RESOLVED = "Resolved"
-    CLOSED = "Closed"
-
-
-class EventPriority(str, Enum):
-    LOW = "Low"
-    MEDIUM = "Medium"
-    HIGH = "High"
-    CRITICAL = "Critical"
-
-
-class EventType(str, Enum):
-    NON_CONFORMANCE = "Non_Conformance"
-    CAPA = "CAPA"
-    AUDIT_FINDING = "Audit_Finding"
-    OTHER = "Other"
+__all__ = [
+    "EventStatus",
+    "EventPriority",
+    "EventType",
+    "EventCreate",
+    "EventUpdate",
+    "EventStatusUpdate",
+    "EventResponse",
+]
 
 
 class EventCreate(BaseModel):
@@ -50,7 +42,8 @@ class EventUpdate(BaseModel):
     assigned_to: Optional[int] = None
     facility: Optional[str] = Field(default=None, max_length=255)
 
-    @validator("title")
+    @field_validator("title")
+    @classmethod
     def non_empty_title(cls, value: Optional[str]) -> Optional[str]:
         if value is not None and not value.strip():
             raise ValueError("Title must not be empty")
