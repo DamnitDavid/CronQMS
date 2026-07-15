@@ -11,6 +11,7 @@ import os
 import uuid
 from datetime import date
 from typing import Optional
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Form, Request, UploadFile, status
 from fastapi.responses import RedirectResponse
@@ -24,14 +25,19 @@ from app.core.sla import sla_target
 from app.core.storage import get_storage
 from app.database import get_db
 from app.models import Attachment, Comment, Event, EventHistory, Site, User
-from app.models.event import EventStatus
+from app.models.event import EventStatus, EventType
 from app.models.user import Role
+from app.services.custom_fields import fields_for, save_values, values_for
 from app.services.event_workflow import (
     WorkflowError,
     apply_status_transition,
     approve_closure,
     reopen as reopen_workflow,
 )
+
+# Valid event-type strings, used to validate the browser form (the JSON API
+# validates via Pydantic; the form path did not until now).
+EVENT_TYPE_VALUES = {t.value for t in EventType}
 
 router = APIRouter(tags=["Pages"])
 
@@ -112,6 +118,42 @@ async def register_page(request: Request):
     return templates.TemplateResponse("auth/register.html", {"request": request})
 
 
+# --- custom fields fragment (htmx) -----------------------------------------
+@router.get("/admin/events/custom-fields")
+async def event_custom_fields_fragment(
+    request: Request,
+    current_user: User = Depends(require_permission(Permission.EVENT_READ)),
+    db: Session = Depends(get_db),
+    event_type: str = EventType.NON_CONFORMANCE.value,
+    event_id: Optional[str] = None,
+):
+    """Render the custom-field inputs for an event type (htmx swap target).
+
+    When ``event_id`` is given (edit flow) the inputs are prefilled from the
+    event's saved values, scoped to the caller's organization.
+    """
+    if event_type not in EVENT_TYPE_VALUES:
+        event_type = EventType.NON_CONFORMANCE.value
+    fields = fields_for(db, current_user.organization_id, event_type)
+    values: dict[int, str] = {}
+    eid = _to_int(event_id)
+    if eid is not None:
+        event = (
+            db.query(Event)
+            .filter(
+                Event.id == eid,
+                Event.organization_id == current_user.organization_id,
+            )
+            .first()
+        )
+        if event is not None:
+            values = values_for(db, event.id)
+    return templates.TemplateResponse(
+        "admin/events/_custom_fields.html",
+        {"request": request, "custom_fields": fields, "custom_values": values},
+    )
+
+
 # --- event list & create ---------------------------------------------------
 @router.get("/admin/events")
 async def admin_events_page(
@@ -145,17 +187,36 @@ async def admin_events_create_page(
     request: Request,
     current_user: User = Depends(require_permission(Permission.EVENT_CREATE)),
     db: Session = Depends(get_db),
+    error: Optional[str] = None,
 ):
     sites = db.query(Site).filter(Site.organization_id == current_user.organization_id).all()
     users = db.query(User).filter(User.organization_id == current_user.organization_id).all()
+    default_type = EventType.NON_CONFORMANCE.value
     return templates.TemplateResponse(
         "admin/events/create.html",
-        {"request": request, "current_user": current_user, "sites": sites, "users": users},
+        {
+            "request": request,
+            "current_user": current_user,
+            "sites": sites,
+            "users": users,
+            "event_types": sorted(EVENT_TYPE_VALUES),
+            "selected_type": default_type,
+            "custom_fields": fields_for(db, current_user.organization_id, default_type),
+            "custom_values": {},
+            "error": error,
+        },
+    )
+
+
+def _create_redirect_error(message: str) -> RedirectResponse:
+    return RedirectResponse(
+        f"/admin/events/create?error={quote(message)}", status_code=status.HTTP_303_SEE_OTHER
     )
 
 
 @router.post("/admin/events/create")
 async def admin_events_create_submit(
+    request: Request,
     current_user: User = Depends(require_permission(Permission.EVENT_CREATE)),
     db: Session = Depends(get_db),
     title: str = Form(...),
@@ -171,6 +232,8 @@ async def admin_events_create_submit(
     work_order: str = Form(""),
     machine: str = Form(""),
 ):
+    if event_type not in EVENT_TYPE_VALUES:
+        event_type = EventType.NON_CONFORMANCE.value
     event = Event(
         title=title,
         description=description or None,
@@ -189,6 +252,12 @@ async def admin_events_create_submit(
         machine=machine or None,
     )
     db.add(event)
+    db.flush()  # assign event.id before saving custom values
+    fields = fields_for(db, current_user.organization_id, event_type)
+    error = save_values(db, event, fields, await request.form())
+    if error:
+        db.rollback()
+        return _create_redirect_error(error)
     db.commit()
     db.refresh(event)
     return _redirect(event.id)
@@ -227,6 +296,8 @@ async def event_detail_page(
             "history": history,
             "user_emails": _org_user_emails(db, current_user.organization_id),
             "perms": _permission_flags(current_user),
+            "custom_fields": fields_for(db, current_user.organization_id, event.event_type),
+            "custom_values": values_for(db, event.id),
             "error": error,
         },
     )
@@ -245,13 +316,23 @@ async def event_edit_page(
     users = db.query(User).filter(User.organization_id == current_user.organization_id).all()
     return templates.TemplateResponse(
         "admin/events/edit.html",
-        {"request": request, "current_user": current_user, "event": event, "sites": sites, "users": users},
+        {
+            "request": request,
+            "current_user": current_user,
+            "event": event,
+            "sites": sites,
+            "users": users,
+            "event_types": sorted(EVENT_TYPE_VALUES),
+            "custom_fields": fields_for(db, current_user.organization_id, event.event_type),
+            "custom_values": values_for(db, event.id),
+        },
     )
 
 
 @router.post("/admin/events/{event_id}/edit")
 async def event_edit_submit(
     event_id: int,
+    request: Request,
     current_user: User = Depends(require_permission(Permission.EVENT_UPDATE)),
     db: Session = Depends(get_db),
     title: str = Form(...),
@@ -268,6 +349,8 @@ async def event_edit_submit(
     machine: str = Form(""),
 ):
     event = _event_or_404(db, event_id, current_user)
+    if event_type not in EVENT_TYPE_VALUES:
+        event_type = event.event_type
     event.title = title
     event.description = description or None
     event.event_type = event_type
@@ -281,6 +364,11 @@ async def event_edit_submit(
     event.work_order = work_order or None
     event.machine = machine or None
     db.add(event)
+    fields = fields_for(db, current_user.organization_id, event_type)
+    error = save_values(db, event, fields, await request.form())
+    if error:
+        db.rollback()
+        return _redirect(event_id, error)
     db.commit()
     return _redirect(event_id)
 

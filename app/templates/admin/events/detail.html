@@ -77,6 +77,26 @@
     </div>
 </section>
 
+{% if custom_fields %}
+<section class="card">
+    <h2>Custom Information</h2>
+    <div class="detail-grid">
+        {% for field in custom_fields %}
+        <div class="field">
+            <div class="label">{{ field.label }}</div>
+            <div class="value">
+                {%- if field.field_type == "boolean" -%}
+                    {{ "Yes" if custom_values.get(field.id) == "true" else "No" }}
+                {%- else -%}
+                    {{ custom_values.get(field.id) or "—" }}
+                {%- endif -%}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
 <section class="card">
     <h2>Attachments</h2>
     {% if attachments %}

@@ -1,0 +1,39 @@
+{% extends "base_admin.html" %}
+
+{% block title %}CAPA{% endblock %}
+{% set active_nav = "capa" %}
+
+{% block admin_content %}
+<section class="table-shell">
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="num">ID</th>
+                    <th>Title</th>
+                    <th>Status</th>
+                    <th>Owner</th>
+                    <th>Due</th>
+                    <th>Verification</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if capas %}
+                    {% for capa in capas %}
+                    <tr>
+                        <td class="num">{{ capa.id }}</td>
+                        <td>{{ capa.title }}</td>
+                        <td><span class="badge capa-{{ capa.status }}">{{ capa.status }}</span></td>
+                        <td>{{ owner_emails.get(capa.owner_id, "Unassigned") }}</td>
+                        <td>{{ capa.due_date or "—" }}</td>
+                        <td>{{ capa.verification_outcome or "—" }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="6" class="table-empty">No CAPAs recorded yet.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

@@ -3,10 +3,24 @@
 {% block title %}Edit Event #{{ event.id }}{% endblock %}
 {% set active_nav = "events" %}
 
-{% block page_actions %}{% endblock %}
-
 {% block admin_content %}
 <form class="card" method="post" action="/admin/events/{{ event.id }}/edit" style="max-width: 900px;">
+    <div class="form-group">
+        <label for="event_type">Event Type</label>
+        <select id="event_type" name="event_type"
+                hx-get="/admin/events/custom-fields"
+                hx-target="#custom-fields"
+                hx-swap="innerHTML"
+                hx-trigger="change"
+                hx-include="this"
+                hx-vals='{"event_id": "{{ event.id }}"}'>
+            {% for t in event_types %}
+            <option value="{{ t }}" {% if event.event_type == t %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+        </select>
+        <small>The form adapts to the selected type.</small>
+    </div>
+
     <div class="form-group">
         <label for="title">Title</label>
         <input id="title" name="title" value="{{ event.title }}" required minlength="3">
@@ -17,15 +31,12 @@
         <textarea id="description" name="description" rows="4">{{ event.description or "" }}</textarea>
     </div>
 
+    <!-- Type-specific company fields, inline in the form -->
+    <div id="custom-fields">
+        {% include "admin/events/_custom_fields.html" %}
+    </div>
+
     <div class="form-grid">
-        <div class="form-group">
-            <label for="event_type">Type</label>
-            <select id="event_type" name="event_type">
-                {% for t in ["Non_Conformance", "CAPA", "Audit_Finding", "Other"] %}
-                <option value="{{ t }}" {% if event.event_type == t %}selected{% endif %}>{{ t }}</option>
-                {% endfor %}
-            </select>
-        </div>
         <div class="form-group">
             <label for="priority">Priority</label>
             <select id="priority" name="priority">

@@ -1,0 +1,38 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Reports{% endblock %}
+{% set active_nav = "reports" %}
+
+{% block admin_content %}
+<section class="page-actions">
+    <a class="button-primary" href="/api/reports/events.csv">⭳ Export events.csv</a>
+</section>
+
+<section class="card">
+    <div class="section-title">
+        <h2>Overdue by owner</h2>
+        <button class="button-secondary button-sm"
+                hx-get="/admin/reports/fragments/overdue-by-owner"
+                hx-target="#overdueReport"
+                hx-swap="innerHTML">Refresh</button>
+    </div>
+    <div id="overdueReport"
+         hx-get="/admin/reports/fragments/overdue-by-owner"
+         hx-trigger="load"
+         hx-swap="innerHTML">
+        <p class="muted">Loading…</p>
+    </div>
+</section>
+
+<section class="card">
+    <h2>Other reports</h2>
+    <p class="muted">Machine-readable data for the following management-review reports is
+        available as JSON or CSV (append <code>?format=csv</code>).</p>
+    <div class="report-links">
+        <a class="button-secondary" href="/api/reports/events-by-month">Events by month</a>
+        <a class="button-secondary" href="/api/reports/pareto-root-cause">Pareto root cause</a>
+        <a class="button-secondary" href="/api/reports/capa-cycle-time">CAPA cycle time</a>
+        <a class="button-secondary" href="/api/reports/overdue-by-owner">Overdue by owner</a>
+    </div>
+</section>
+{% endblock %}

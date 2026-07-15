@@ -1,0 +1,92 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Settings — Custom Fields{% endblock %}
+{% set active_nav = "settings" %}
+
+{% block admin_content %}
+{% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
+
+<section class="card">
+    <h2>Custom Fields</h2>
+    <p class="muted">Define the information captured for each event type. Fields appear on the
+        event form (Event Type first) and on the event detail page.</p>
+
+    <form method="get" action="/admin/settings/custom-fields" class="inline-form" style="margin-top: 1rem;">
+        <label for="event_type" style="margin: 0;">Event type</label>
+        <select id="event_type" name="event_type" onchange="this.form.submit()">
+            {% for t in event_types %}
+            <option value="{{ t }}" {% if t == selected_type %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+        </select>
+        <noscript><button type="submit">Show</button></noscript>
+    </form>
+</section>
+
+<section class="table-shell">
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Label</th>
+                    <th>Key</th>
+                    <th>Type</th>
+                    <th style="width: 1%;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if fields %}
+                    {% for field in fields %}
+                    <tr>
+                        <td>
+                            {{ field.label }}
+                            {% if field.field_type == "select" and field.options %}
+                            <div class="field-hint" style="margin-top: 0.2rem;">Options: {{ field.options.split("\n") | join(", ") }}</div>
+                            {% endif %}
+                        </td>
+                        <td><code>{{ field.key }}</code></td>
+                        <td><span class="badge cf-{{ field.field_type }}">{{ field.field_type }}</span></td>
+                        <td>
+                            <form method="post" action="/admin/settings/custom-fields/{{ field.id }}/delete"
+                                  onsubmit="return confirm('Remove “{{ field.label }}” from {{ selected_type }}?');">
+                                <button class="button-secondary button-sm" type="submit">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="4" class="table-empty">No custom fields for {{ selected_type }} yet.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="card" style="max-width: 640px;">
+    <h3>Add a field to {{ selected_type }}</h3>
+    <form method="post" action="/admin/settings/custom-fields">
+        <input type="hidden" name="event_type" value="{{ selected_type }}">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="label">Label</label>
+                <input id="label" name="label" required placeholder="e.g. Scrap quantity">
+            </div>
+            <div class="form-group">
+                <label for="field_type">Type</label>
+                <select id="field_type" name="field_type">
+                    {% for ft in field_types %}
+                    <option value="{{ ft }}">{{ ft }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="form-group" style="margin-top: 1rem;">
+            <label for="options">Dropdown options</label>
+            <textarea id="options" name="options" rows="3" placeholder="One per line, e.g.&#10;Acme Corp&#10;Globex&#10;Initech"></textarea>
+            <small>One per line. Used only for the <strong>select</strong> (dropdown) type; ignored otherwise.</small>
+        </div>
+        <div style="margin-top: 1rem;">
+            <button class="button-primary" type="submit">Add field</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

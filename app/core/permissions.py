@@ -29,6 +29,7 @@ class Permission(str, Enum):
     CAPA_UPDATE = "capa:update"
     CAPA_VERIFY = "capa:verify"
     USER_MANAGE = "user:manage"
+    SETTINGS_MANAGE = "settings:manage"
     DASHBOARD_VIEW = "dashboard:view"
 
 

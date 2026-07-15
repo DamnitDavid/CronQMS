@@ -4,7 +4,24 @@
 {% set active_nav = "events" %}
 
 {% block admin_content %}
-<form id="createEventForm" class="card" method="post" action="/admin/events/create" style="max-width: 760px;">
+{% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
+
+<form id="createEventForm" class="card" method="post" action="/admin/events/create" style="max-width: 820px;">
+    <div class="form-group">
+        <label for="event_type">Event Type</label>
+        <select id="event_type" name="event_type"
+                hx-get="/admin/events/custom-fields"
+                hx-target="#custom-fields"
+                hx-swap="innerHTML"
+                hx-trigger="change"
+                hx-include="this">
+            {% for t in event_types %}
+            <option value="{{ t }}" {% if t == selected_type %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+        </select>
+        <small>The form adapts to the selected type.</small>
+    </div>
+
     <div class="form-group">
         <label for="title">Title</label>
         <input type="text" id="title" name="title" required minlength="3">
@@ -13,16 +30,13 @@
         <label for="description">Description</label>
         <textarea id="description" name="description"></textarea>
     </div>
+
+    <!-- Type-specific company fields, inline in the form -->
+    <div id="custom-fields">
+        {% include "admin/events/_custom_fields.html" %}
+    </div>
+
     <div class="form-grid">
-        <div class="form-group">
-            <label for="event_type">Event Type</label>
-            <select id="event_type" name="event_type">
-                <option>Non_Conformance</option>
-                <option>CAPA</option>
-                <option>Audit_Finding</option>
-                <option>Other</option>
-            </select>
-        </div>
         <div class="form-group">
             <label for="priority">Priority</label>
             <select id="priority" name="priority">
@@ -55,6 +69,7 @@
             <input type="text" id="lot_batch" name="lot_batch">
         </div>
     </div>
+
     <p class="field-hint" style="margin-top: 1rem;">Target close date is derived from priority SLA if left unset.</p>
     <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
         <button class="button-primary" type="submit">Create Event</button>
