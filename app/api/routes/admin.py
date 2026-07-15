@@ -5,6 +5,8 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from datetime import date
+
 from app.database import get_db
 from app.models import Event, User
 from app.core.permissions import Permission, require_permission
@@ -26,6 +28,15 @@ def _dashboard_stats(db: Session, organization_id: int | None) -> dict:
             org_filter,
             Event.status == "Resolved",
             func.date(Event.updated_at) == func.current_date(),
+            Event.is_active.is_(True),
+        ).scalar() or 0,
+        # Events still open past their target close date — the meaningful
+        # "needs attention now" figure.
+        "overdue_events": db.query(func.count(Event.id)).filter(
+            org_filter,
+            Event.target_close_date.isnot(None),
+            Event.target_close_date < date.today(),
+            Event.status != "Closed",
             Event.is_active.is_(True),
         ).scalar() or 0,
         "pending_actions": db.query(func.count(Event.id)).filter(org_filter, Event.status.in_(["Open", "In_Progress"]), Event.is_active.is_(True)).scalar() or 0,

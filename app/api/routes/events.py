@@ -19,6 +19,7 @@ from app.schemas.event import (
     EventUpdate,
 )
 from app.core.permissions import Permission, require_permission
+from app.core.sla import sla_target
 
 router = APIRouter(prefix="/api/events", tags=["Events"])
 
@@ -60,6 +61,10 @@ async def create_event(
 ) -> Event:
     """Create a new quality event in the caller's organization."""
     organization_id = _require_organization(current_user)
+    # Derive the target close date from priority SLA unless one is supplied.
+    target_close_date = event_data.target_close_date or sla_target(
+        event_data.priority.value, date.today()
+    )
     new_event = Event(
         title=event_data.title,
         description=event_data.description,
@@ -70,6 +75,12 @@ async def create_event(
         site_id=event_data.site_id,
         organization_id=organization_id,
         reported_by=current_user.id,
+        target_close_date=target_close_date,
+        product_part_number=event_data.product_part_number,
+        lot_batch=event_data.lot_batch,
+        supplier=event_data.supplier,
+        work_order=event_data.work_order,
+        machine=event_data.machine,
     )
 
     db.add(new_event)

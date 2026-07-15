@@ -1,6 +1,6 @@
 """Pydantic schemas for event-related requests and responses."""
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
@@ -20,7 +20,17 @@ __all__ = [
 ]
 
 
-class EventCreate(BaseModel):
+class TraceabilityFields(BaseModel):
+    """Traceability attributes shared by create/update schemas."""
+
+    product_part_number: Optional[str] = Field(default=None, max_length=100)
+    lot_batch: Optional[str] = Field(default=None, max_length=100)
+    supplier: Optional[str] = Field(default=None, max_length=255)
+    work_order: Optional[str] = Field(default=None, max_length=100)
+    machine: Optional[str] = Field(default=None, max_length=100)
+
+
+class EventCreate(TraceabilityFields):
     """Schema for creating a new quality event."""
 
     title: str = Field(..., min_length=3, max_length=255)
@@ -29,9 +39,11 @@ class EventCreate(BaseModel):
     priority: EventPriority = EventPriority.MEDIUM
     assigned_to: Optional[int] = None
     site_id: Optional[int] = None
+    # If omitted, derived from priority SLA at creation time.
+    target_close_date: Optional[date] = None
 
 
-class EventUpdate(BaseModel):
+class EventUpdate(TraceabilityFields):
     """Partial update schema for quality events."""
 
     title: Optional[str] = Field(default=None, min_length=3, max_length=255)
@@ -41,6 +53,7 @@ class EventUpdate(BaseModel):
     priority: Optional[EventPriority] = None
     assigned_to: Optional[int] = None
     site_id: Optional[int] = None
+    target_close_date: Optional[date] = None
 
     @field_validator("title")
     @classmethod
@@ -69,6 +82,14 @@ class EventResponse(BaseModel):
     organization_id: int
     site_id: Optional[int]
     reported_by: int
+    target_close_date: Optional[date]
+    product_part_number: Optional[str]
+    lot_batch: Optional[str]
+    supplier: Optional[str]
+    work_order: Optional[str]
+    machine: Optional[str]
+    is_overdue: bool
+    days_open: int
     is_active: bool
     created_at: datetime
     updated_at: datetime

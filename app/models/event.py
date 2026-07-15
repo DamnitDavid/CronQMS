@@ -1,8 +1,8 @@
 """Quality event model for manufacturing events tracking."""
 
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text, Boolean
+from sqlalchemy import Column, String, Integer, DateTime, Date, ForeignKey, Text, Boolean
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -46,6 +46,12 @@ class Event(Base):
         "site_id",
         "organization_id",
         "reported_by",
+        "target_close_date",
+        "product_part_number",
+        "lot_batch",
+        "supplier",
+        "work_order",
+        "machine",
         "is_active",
     )
 
@@ -60,6 +66,17 @@ class Event(Base):
         Integer, ForeignKey("organizations.id"), nullable=False, index=True
     )
     site_id = Column(Integer, ForeignKey("sites.id"), nullable=True, index=True)
+
+    # Due date / aging.
+    target_close_date = Column(Date, nullable=True)
+
+    # Traceability (indexed: "show every event on lot 4471" must be fast).
+    product_part_number = Column(String(100), nullable=True, index=True)
+    lot_batch = Column(String(100), nullable=True, index=True)
+    supplier = Column(String(255), nullable=True, index=True)
+    work_order = Column(String(100), nullable=True, index=True)
+    machine = Column(String(100), nullable=True, index=True)
+
     is_active = Column(Boolean, default=True, nullable=False)
     reported_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -69,6 +86,20 @@ class Event(Base):
     reporter = relationship("User", foreign_keys=[reported_by], lazy="joined")
     organization = relationship("Organization")
     site = relationship("Site")
+
+    @property
+    def is_overdue(self) -> bool:
+        """True when past the target close date and not yet closed."""
+        if self.target_close_date is None or self.status == EventStatus.CLOSED.value:
+            return False
+        return date.today() > self.target_close_date
+
+    @property
+    def days_open(self) -> int:
+        """Calendar days the event has been open (0 if created_at unset)."""
+        if self.created_at is None:
+            return 0
+        return (datetime.utcnow() - self.created_at).days
 
     def __repr__(self) -> str:
         """String representation of Event."""
