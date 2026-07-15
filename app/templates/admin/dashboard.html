@@ -38,6 +38,10 @@
                 <p>{{ stats.open_events }}</p>
             </article>
             <article>
+                <h3>Overdue</h3>
+                <p>{{ stats.overdue_events }}</p>
+            </article>
+            <article>
                 <h3>Resolved Today</h3>
                 <p>{{ stats.resolved_today }}</p>
             </article>
@@ -48,21 +52,18 @@
         </section>
 
         <section class="quick-actions">
-            <button hx-get="/admin/events/create" hx-target="#pageContent" hx-swap="outerHTML">New Event</button>
-            <button hx-get="/admin/events" hx-target="#pageContent" hx-swap="outerHTML">View Events</button>
-            <button hx-get="/api/recent-activity" hx-trigger="click" hx-target="#recentActivity" hx-swap="innerHTML">Refresh Activity</button>
+            <a class="button-primary" href="/admin/events/create">New Event</a>
+            <a class="button-secondary" href="/admin/events">View Events</a>
+            <button class="button-secondary"
+                    hx-get="/admin/fragments/recent-activity"
+                    hx-target="#activityFeed"
+                    hx-swap="innerHTML">Refresh Activity</button>
         </section>
 
-        <section class="recent-activity" id="recentActivity">
+        <section class="recent-activity">
             <h2>Recent Activity</h2>
-            <div class="activity-feed">
-                {% for event in recent_events %}
-                <div class="activity-item">
-                    <strong>{{ event.title }}</strong>
-                    <span>{{ event.status }} / {{ event.priority }}</span>
-                    <time>{{ event.updated_at.strftime('%Y-%m-%d %H:%M') }}</time>
-                </div>
-                {% endfor %}
+            <div class="activity-feed" id="activityFeed">
+                {% include "admin/_activity_feed.html" %}
             </div>
         </section>
     </div>

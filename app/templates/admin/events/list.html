@@ -24,6 +24,10 @@
             </div>
         </header>
 
+        {% if can_create %}
+        <div><a class="button-primary" href="/admin/events/create">New Event</a></div>
+        {% endif %}
+
         <section class="filters">
             <form hx-get="/admin/events" hx-target="#eventTable" hx-swap="outerHTML" class="filter-form">
                 <label>
@@ -62,6 +66,7 @@
                         <th>Title</th>
                         <th>Status</th>
                         <th>Priority</th>
+                        <th>Target Close</th>
                         <th>Updated</th>
                     </tr>
                 </thead>
@@ -70,15 +75,16 @@
                         {% for event in events %}
                         <tr>
                             <td>{{ event.id }}</td>
-                            <td>{{ event.title }}</td>
-                            <td>{{ event.status }}</td>
+                            <td><a href="/admin/events/{{ event.id }}">{{ event.title }}</a></td>
+                            <td>{{ event.status }}{% if event.is_overdue %} ⚠️{% endif %}</td>
                             <td>{{ event.priority }}</td>
+                            <td>{{ event.target_close_date or "—" }}</td>
                             <td>{{ event.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
                         </tr>
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="5">No events found. Create one from the dashboard.</td>
+                            <td colspan="6">No events found. Create one from the dashboard.</td>
                         </tr>
                     {% endif %}
                 </tbody>

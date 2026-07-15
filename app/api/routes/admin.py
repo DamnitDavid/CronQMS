@@ -80,12 +80,32 @@ async def api_stats(
     return _dashboard_stats(db, current_user.organization_id)
 
 
+@router.get("/admin/fragments/recent-activity")
+async def recent_activity_fragment(
+    request: Request,
+    current_user: User = Depends(require_permission(Permission.DASHBOARD_VIEW)),
+    db: Session = Depends(get_db),
+):
+    """Render the recent-activity feed as an HTML fragment for htmx swaps."""
+    recent_events = (
+        db.query(Event)
+        .filter(Event.organization_id == current_user.organization_id, Event.is_active.is_(True))
+        .order_by(Event.updated_at.desc())
+        .limit(10)
+        .all()
+    )
+    return templates.TemplateResponse(
+        "admin/_activity_feed.html",
+        {"request": request, "recent_events": recent_events},
+    )
+
+
 @router.get("/api/recent-activity")
 async def api_recent_activity(
     current_user: User = Depends(require_permission(Permission.DASHBOARD_VIEW)),
     db: Session = Depends(get_db),
 ) -> list[dict]:
-    """Return recent activity event fragments for the caller's organization."""
+    """Return recent activity as JSON (API clients)."""
     events = (
         db.query(Event)
         .filter(Event.organization_id == current_user.organization_id, Event.is_active.is_(True))
