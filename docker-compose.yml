@@ -1,3 +1,9 @@
+# DEVELOPMENT ONLY. This compose file is for local development and must not be
+# used in production: it runs uvicorn with --reload, bind-mounts the source into
+# the container, ships weak default DB credentials, exposes Postgres on 5432, and
+# defaults to DEBUG=true / ENVIRONMENT=development (which leaves session cookies
+# without the Secure flag). For production, deploy the container to a PaaS using
+# render.yaml (see README "Deploy to a PaaS").
 services:
   postgres:
     image: postgres:16-alpine

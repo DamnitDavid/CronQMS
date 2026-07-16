@@ -4,7 +4,7 @@ import os
 import tempfile
 from typing import Optional
 from functools import lru_cache
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 # Built-in placeholder secrets shipped in the repo. These are intentionally
@@ -71,6 +71,20 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = False
         extra = "ignore"
+
+    @field_validator("database_url")
+    @classmethod
+    def _normalize_database_url(cls, value: str) -> str:
+        """Normalize managed-Postgres URLs to a driver SQLAlchemy accepts.
+
+        Managed platforms (Render, Railway, Heroku-style providers) hand out
+        connection strings with the ``postgres://`` scheme, which SQLAlchemy 2.0
+        rejects. Rewrite the legacy scheme to ``postgresql://`` so the app boots
+        against a managed database without hand-editing the injected URL.
+        """
+        if value.startswith("postgres://"):
+            return "postgresql://" + value[len("postgres://") :]
+        return value
 
     @model_validator(mode="after")
     def _reject_insecure_production_secrets(self) -> "Settings":

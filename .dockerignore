@@ -1,0 +1,47 @@
+# Keep the build context small and avoid copying local-only or sensitive files
+# into the image.
+
+# Version control
+.git
+.gitignore
+
+# Local environment / secrets — never bake these into an image
+.env
+.env.*
+!.env.example
+
+# Python caches and virtualenvs
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+
+# Tests and tooling (not needed at runtime)
+tests/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.mypy_cache/
+
+# Docs and dev-only compose
+*.md
+docker-compose*.yml
+.dockerignore
+
+# Local databases / logs
+*.db
+*.sqlite3
+*.log
+logs/
+
+# IDE / OS cruft
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store

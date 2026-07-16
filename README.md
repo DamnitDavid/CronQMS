@@ -42,7 +42,7 @@ data access is scoped to it.
 
 ## Getting started
 
-### Option A — Docker Compose (recommended for local dev)
+### Option A — Docker Compose (local development only)
 
 ```bash
 cp .env.example .env          # then edit values (see Configuration)
@@ -52,6 +52,11 @@ docker compose up --build
 This starts PostgreSQL, runs `alembic upgrade head`, and serves the app at
 http://localhost:8000. On first run, open the app and you'll be sent to the
 `/setup` wizard to create the first organization and admin.
+
+> `docker-compose.yml` is **development only** (auto-reload, source bind-mount,
+> weak default credentials, `DEBUG=true`). For production, see
+> [Deploying to production](#deploying-to-production-paas) — do not expose the
+> compose stack publicly.
 
 ### Option B — Local Python
 
@@ -95,6 +100,50 @@ All settings come from environment variables (or a local `.env`). See
   and the first admin via `/setup`.
 
 Report vulnerabilities privately — see [SECURITY.md](SECURITY.md).
+
+## Deploying to production (PaaS)
+
+You don't need to change how the app is packaged — a PaaS deploys the same
+Docker image. The container binds to the platform-injected `$PORT`, and the app
+normalizes managed-Postgres `postgres://` URLs automatically, so no code changes
+are needed to move between platforms.
+
+### Render (turnkey)
+
+A [`render.yaml`](render.yaml) blueprint is included. It provisions the web
+service **and** a managed PostgreSQL, runs migrations before each deploy, and
+auto-generates strong `SECRET_KEY`/`JWT_SECRET`.
+
+1. Push this repo to GitHub and create a **Blueprint** in Render pointing at it.
+2. Render reads `render.yaml`, builds the image, and provisions Postgres.
+3. After the first deploy, set `CORS_ORIGINS` to your real origin, e.g.
+   `["https://app.example.com"]`.
+4. Open the app over HTTPS and complete the `/setup` wizard.
+
+Migrations run via the `preDeployCommand` (`alembic upgrade head`) — they are
+**not** baked into the container start command, so replicas never race to
+migrate.
+
+### Railway / Fly.io (same container, different glue)
+
+- **Railway** — deploy from the `Dockerfile`, add a managed Postgres plugin
+  (provides `DATABASE_URL`), and set the same env vars as `render.yaml`
+  (`ENVIRONMENT=production`, `DEBUG=false`, `SECRET_KEY`, `JWT_SECRET`,
+  `CORS_ORIGINS`, `ALLOW_PUBLIC_REGISTRATION=false`). Run `alembic upgrade head`
+  as a deploy/release step. Railway injects `$PORT`, which the image honors.
+- **Fly.io** — `fly launch` detects the `Dockerfile`; add `fly postgres` and set
+  the same env vars via `fly secrets`. Use a `[deploy] release_command =
+  "alembic upgrade head"` in `fly.toml`. Fly uses a fixed internal port, so
+  either leave `$PORT` unset (defaults to 8000) or set it to match your
+  `internal_port`.
+
+### Scaling note
+
+The built-in login/setup rate limiter is **per-process** (see
+`app/core/ratelimit.py`). It's effective on a single instance, but if you scale
+to more than one instance or worker, add an edge rate limiter (the platform's,
+or Cloudflare) or a shared store — otherwise each instance counts attempts
+independently.
 
 ## Production checklist
 
