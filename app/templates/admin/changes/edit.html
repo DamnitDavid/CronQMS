@@ -1,0 +1,86 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Edit {{ change.reference }}{% endblock %}
+{% set active_nav = "changes" %}
+
+{% block admin_content %}
+{% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
+
+<form class="card" method="post" action="/admin/changes/{{ change.id }}/edit" style="max-width: 820px;">
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="reference">Reference</label>
+            <input type="text" id="reference" name="reference" required value="{{ change.reference }}">
+        </div>
+        <div class="form-group">
+            <label for="change_type">Type</label>
+            <select id="change_type" name="change_type">
+                {% for t in types %}
+                <option value="{{ t }}" {% if change.change_type == t %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="title">Title</label>
+        <input type="text" id="title" name="title" required minlength="3" value="{{ change.title }}">
+    </div>
+
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="risk_level">Risk Level</label>
+            <select id="risk_level" name="risk_level">
+                {% for r in risks %}
+                <option value="{{ r }}" {% if change.risk_level == r %}selected{% endif %}>{{ r }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="affected_area">Affected Area (line / product / dept)</label>
+            <input type="text" id="affected_area" name="affected_area" value="{{ change.affected_area or '' }}">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="owner_id">Change Owner</label>
+        <select id="owner_id" name="owner_id">
+            <option value="">Unassigned</option>
+            {% for u in users %}
+            <option value="{{ u.id }}" {% if change.owner_id == u.id %}selected{% endif %}>{{ u.email }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="description">Description (what is changing)</label>
+        <textarea id="description" name="description">{{ change.description or '' }}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="reason">Reason / Justification</label>
+        <textarea id="reason" name="reason">{{ change.reason or '' }}</textarea>
+    </div>
+
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="target_date">Target Implementation Date</label>
+            <input type="date" id="target_date" name="target_date" value="{{ change.target_date or '' }}">
+        </div>
+        <div class="form-group">
+            <label for="implementation_date">Actual Implementation Date</label>
+            <input type="date" id="implementation_date" name="implementation_date" value="{{ change.implementation_date or '' }}">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="summary">Post-Implementation Review / Outcome</label>
+        <textarea id="summary" name="summary">{{ change.summary or '' }}</textarea>
+    </div>
+
+    <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+        <button class="button-primary" type="submit">Save Changes</button>
+        <a class="button-secondary" href="/admin/changes/{{ change.id }}">Cancel</a>
+    </div>
+</form>
+{% endblock %}

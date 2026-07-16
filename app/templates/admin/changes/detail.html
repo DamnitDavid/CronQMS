@@ -1,0 +1,271 @@
+{% extends "base_admin.html" %}
+
+{% block title %}{{ change.reference }} — {{ change.title }}{% endblock %}
+{% set active_nav = "changes" %}
+
+{% block page_heading %}
+<h1>{{ change.title }}</h1>
+<div class="crumb">
+    <a href="/admin/changes">Change Control</a> &middot; {{ change.reference }}
+    &middot; {{ change.change_type }}
+    &middot; <span class="badge change-{{ change.status }}">{{ change.status.replace('_', ' ') }}</span>
+</div>
+{% endblock %}
+
+{% block admin_content %}
+{% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
+
+<section class="card action-bar">
+    {% if perms.can_edit %}<a class="button-secondary" href="/admin/changes/{{ change.id }}/edit">Edit</a>{% endif %}
+
+    {% if perms.can_edit %}
+    <form method="post" action="/admin/changes/{{ change.id }}/status" class="inline-form">
+        <select name="status">
+            {% for s in statuses %}
+            <option value="{{ s }}" {% if change.status == s %}selected{% endif %}>{{ s.replace('_', ' ') }}</option>
+            {% endfor %}
+        </select>
+        <button class="button-sm button-primary" type="submit">Set Status</button>
+    </form>
+    {% endif %}
+
+    {% if perms.can_delete %}
+    <form method="post" action="/admin/changes/{{ change.id }}/delete" onsubmit="return confirm('Delete this change request?');">
+        <button class="button-secondary" type="submit">Delete</button>
+    </form>
+    {% endif %}
+</section>
+
+{% if not perms.can_approve %}
+<div class="field-hint" style="margin-bottom: 1rem;">
+    Approving or rejecting a change requires the "Approve or reject changes" permission.
+</div>
+{% endif %}
+{% if change.open_actions_count %}
+<div class="field-hint" style="margin-bottom: 1rem;">
+    This change has {{ change.open_actions_count }} open action(s). It cannot be closed until they are resolved.
+</div>
+{% endif %}
+
+<section class="detail-grid">
+    <div class="field"><div class="label">Type</div><div class="value">{{ change.change_type }}</div></div>
+    <div class="field"><div class="label">Risk Level</div><div class="value"><span class="badge risk-{{ change.risk_level }}">{{ change.risk_level }}</span></div></div>
+    <div class="field"><div class="label">Owner</div><div class="value">{{ user_emails.get(change.owner_id, "Unassigned") }}</div></div>
+    <div class="field"><div class="label">Affected Area</div><div class="value">{{ change.affected_area or "—" }}</div></div>
+    <div class="field"><div class="label">Target Date</div><div class="value">{{ change.target_date or "—" }}</div></div>
+    <div class="field"><div class="label">Implemented</div><div class="value">{{ change.implementation_date or "—" }}</div></div>
+</section>
+
+<section class="card">
+    <h2>Description</h2>
+    <p>{{ change.description or "No description provided." }}</p>
+</section>
+
+<section class="card">
+    <h2>Reason / Justification</h2>
+    <p>{{ change.reason or "No reason recorded." }}</p>
+</section>
+
+{% if change.summary %}
+<section class="card">
+    <h2>Post-Implementation Review</h2>
+    <p>{{ change.summary }}</p>
+</section>
+{% endif %}
+
+<section class="card">
+    <h2>Impact Assessment</h2>
+    {% if impacts %}
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Area</th>
+                    <th>Impact</th>
+                    <th>Description</th>
+                    <th>Mitigation</th>
+                    {% if perms.can_assess %}<th>Actions</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for impact in impacts %}
+                <tr>
+                    {% if perms.can_assess %}
+                    <td colspan="4">
+                        <form method="post" action="/admin/changes/{{ change.id }}/impacts/{{ impact.id }}" class="inline-form" style="flex-wrap: wrap;">
+                            <select name="area">
+                                {% for a in areas %}
+                                <option value="{{ a }}" {% if impact.area == a %}selected{% endif %}>{{ a }}</option>
+                                {% endfor %}
+                            </select>
+                            <select name="impact_level">
+                                {% for lvl in impact_levels %}
+                                <option value="{{ lvl }}" {% if impact.impact_level == lvl %}selected{% endif %}>{{ lvl }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="text" name="description" placeholder="Impact" value="{{ impact.description or '' }}" style="flex: 1;">
+                            <input type="text" name="mitigation" placeholder="Mitigation" value="{{ impact.mitigation or '' }}" style="flex: 1;">
+                            <button class="button-sm button-secondary" type="submit">Save</button>
+                        </form>
+                    </td>
+                    <td>
+                        <form method="post" action="/admin/changes/{{ change.id }}/impacts/{{ impact.id }}/delete" onsubmit="return confirm('Remove this impact row?');">
+                            <button class="button-sm button-secondary" type="submit">Delete</button>
+                        </form>
+                    </td>
+                    {% else %}
+                    <td>{{ impact.area }}</td>
+                    <td><span class="badge impact-{{ impact.impact_level }}">{{ impact.impact_level }}</span></td>
+                    <td>{{ impact.description or "—" }}</td>
+                    <td>{{ impact.mitigation or "—" }}</td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="muted">No impact areas assessed yet.</p>
+    {% endif %}
+
+    {% if perms.can_assess %}
+    <form method="post" action="/admin/changes/{{ change.id }}/impacts" class="inline-form" style="margin-top: 1rem; flex-wrap: wrap;">
+        <select name="area">
+            {% for a in areas %}
+            <option value="{{ a }}">{{ a }}</option>
+            {% endfor %}
+        </select>
+        <select name="impact_level">
+            {% for lvl in impact_levels %}
+            <option value="{{ lvl }}">{{ lvl }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" name="description" placeholder="Impact description" style="flex: 1;">
+        <input type="text" name="mitigation" placeholder="Mitigation" style="flex: 1;">
+        <button class="button-secondary" type="submit">Add Impact</button>
+    </form>
+    {% endif %}
+</section>
+
+<section class="card">
+    <h2>Implementation Actions</h2>
+    {% if actions %}
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="num">ID</th>
+                    <th>Title</th>
+                    <th>Status</th>
+                    <th>Owner</th>
+                    <th>Due</th>
+                    <th>CAPA</th>
+                    {% if perms.can_assess %}<th>Update</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in actions %}
+                <tr>
+                    <td class="num">{{ a.id }}</td>
+                    <td>{{ a.title }}{% if a.description %}<div class="muted">{{ a.description }}</div>{% endif %}</td>
+                    {% if perms.can_assess %}
+                    <td colspan="5">
+                        <form method="post" action="/admin/changes/{{ change.id }}/actions/{{ a.id }}" class="inline-form" style="flex-wrap: wrap;">
+                            <select name="status">
+                                {% for s in action_statuses %}
+                                <option value="{{ s }}" {% if a.status == s %}selected{% endif %}>{{ s.replace('_', ' ') }}</option>
+                                {% endfor %}
+                            </select>
+                            <select name="owner_id">
+                                <option value="">Unassigned</option>
+                                {% for u in users %}
+                                <option value="{{ u.id }}" {% if a.owner_id == u.id %}selected{% endif %}>{{ u.email }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="date" name="due_date" value="{{ a.due_date or '' }}">
+                            <select name="capa_id">
+                                <option value="">No CAPA</option>
+                                {% for c in capas %}
+                                <option value="{{ c.id }}" {% if a.capa_id == c.id %}selected{% endif %}>#{{ c.id }} {{ c.title }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="text" name="reason" placeholder="Reason (optional)">
+                            <button class="button-sm button-primary" type="submit">Save</button>
+                        </form>
+                    </td>
+                    <td>
+                        <form method="post" action="/admin/changes/{{ change.id }}/actions/{{ a.id }}/delete" onsubmit="return confirm('Delete this action?');">
+                            <button class="button-sm button-secondary" type="submit">Delete</button>
+                        </form>
+                    </td>
+                    {% else %}
+                    <td><span class="badge action-{{ a.status }}">{{ a.status.replace('_', ' ') }}</span></td>
+                    <td>{{ user_emails.get(a.owner_id, "—") }}</td>
+                    <td>{{ a.due_date or "—" }}</td>
+                    <td>{% if a.capa_id %}#{{ a.capa_id }}{% else %}—{% endif %}</td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="muted">No implementation actions raised.</p>
+    {% endif %}
+
+    {% if perms.can_assess %}
+    <form method="post" action="/admin/changes/{{ change.id }}/actions" style="margin-top: 1rem;">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="action_title">Action Title</label>
+                <input type="text" id="action_title" name="title" required minlength="3">
+            </div>
+            <div class="form-group">
+                <label for="action_owner">Owner</label>
+                <select id="action_owner" name="owner_id">
+                    <option value="">Unassigned</option>
+                    {% for u in users %}
+                    <option value="{{ u.id }}">{{ u.email }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="action_due">Due Date</label>
+                <input type="date" id="action_due" name="due_date">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="action_desc">Description</label>
+            <textarea id="action_desc" name="description"></textarea>
+        </div>
+        <button class="button-secondary" type="submit">Add Action</button>
+    </form>
+    {% endif %}
+</section>
+
+<section class="card">
+    <h2>Change History</h2>
+    {% if history %}
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead><tr><th>When</th><th>Entity</th><th>Field</th><th>From</th><th>To</th><th>Reason</th><th>Actor</th></tr></thead>
+            <tbody>
+                {% for h in history %}
+                <tr>
+                    <td>{{ h.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ h.entity_type.replace('_', ' ') }} #{{ h.entity_id }}</td>
+                    <td>{{ h.field }}</td>
+                    <td>{{ h.old_value if h.old_value is not none else "—" }}</td>
+                    <td>{{ h.new_value if h.new_value is not none else "—" }}</td>
+                    <td>{{ h.reason or "" }}</td>
+                    <td>{{ user_emails.get(h.actor_id, h.actor_id if h.actor_id else "system") }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="muted">No history recorded.</p>
+    {% endif %}
+</section>
+{% endblock %}

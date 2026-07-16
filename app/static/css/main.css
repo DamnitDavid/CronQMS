@@ -889,6 +889,34 @@ table.data-table tbody tr.overdue td:first-child {
 .badge.training-Waived { background: var(--neutral-soft); color: var(--neutral); }
 .badge.training-Expired { background: var(--danger-soft); color: var(--danger); }
 
+/* Change request status badges */
+.badge.change-Draft { background: var(--neutral-soft); color: var(--neutral); }
+.badge.change-Submitted { background: var(--info-soft); color: var(--info); }
+.badge.change-Under_Review { background: var(--warn-soft); color: var(--warn); }
+.badge.change-Approved { background: var(--primary-soft); color: var(--primary); }
+.badge.change-Rejected { background: var(--danger-soft); color: var(--danger); }
+.badge.change-Implemented { background: var(--info-soft); color: var(--info); }
+.badge.change-Closed { background: var(--ok-soft); color: var(--ok); }
+.badge.change-Cancelled { background: var(--neutral-soft); color: var(--neutral); }
+
+/* Change risk-level badges */
+.badge.risk-Low { background: var(--neutral-soft); color: var(--neutral); }
+.badge.risk-Medium { background: var(--info-soft); color: var(--info); }
+.badge.risk-High { background: var(--warn-soft); color: var(--warn); }
+.badge.risk-Critical { background: var(--danger-soft); color: var(--danger); }
+
+/* Change impact-level badges */
+.badge.impact-None { background: var(--neutral-soft); color: var(--neutral); }
+.badge.impact-Low { background: var(--info-soft); color: var(--info); }
+.badge.impact-Medium { background: var(--warn-soft); color: var(--warn); }
+.badge.impact-High { background: var(--danger-soft); color: var(--danger); }
+.badge.impact-Critical { background: var(--danger-soft); color: var(--danger); }
+
+/* Change action status badges */
+.badge.action-Open { background: var(--info-soft); color: var(--info); }
+.badge.action-In_Progress { background: var(--warn-soft); color: var(--warn); }
+.badge.action-Closed { background: var(--ok-soft); color: var(--ok); }
+
 /* Boolean custom-field input row */
 .checkbox-row {
     display: flex;

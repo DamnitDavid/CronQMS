@@ -52,6 +52,12 @@ class Permission(str, Enum):
     TRAINING_UPDATE = "training:update"
     TRAINING_CERTIFY = "training:certify"
     TRAINING_DELETE = "training:delete"
+    CHANGE_CREATE = "change:create"
+    CHANGE_READ = "change:read"
+    CHANGE_UPDATE = "change:update"
+    CHANGE_ASSESS = "change:assess"
+    CHANGE_APPROVE = "change:approve"
+    CHANGE_DELETE = "change:delete"
     USER_MANAGE = "user:manage"
     SETTINGS_MANAGE = "settings:manage"
     DASHBOARD_VIEW = "dashboard:view"
@@ -96,6 +102,12 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.TRAINING_UPDATE,
         Permission.TRAINING_CERTIFY,
         Permission.TRAINING_DELETE,
+        Permission.CHANGE_CREATE,
+        Permission.CHANGE_READ,
+        Permission.CHANGE_UPDATE,
+        Permission.CHANGE_ASSESS,
+        Permission.CHANGE_APPROVE,
+        Permission.CHANGE_DELETE,
         Permission.DASHBOARD_VIEW,
     },
     Role.INVESTIGATOR: {
@@ -121,6 +133,10 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.TRAINING_READ,
         Permission.TRAINING_UPDATE,
         Permission.TRAINING_CERTIFY,
+        Permission.CHANGE_CREATE,
+        Permission.CHANGE_READ,
+        Permission.CHANGE_UPDATE,
+        Permission.CHANGE_ASSESS,
         Permission.DASHBOARD_VIEW,
     },
     Role.APPROVER: {
@@ -140,6 +156,8 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.AUDIT_CLOSE,
         Permission.TRAINING_READ,
         Permission.TRAINING_CERTIFY,
+        Permission.CHANGE_READ,
+        Permission.CHANGE_APPROVE,
         Permission.DASHBOARD_VIEW,
     },
     Role.VIEWER: {
@@ -149,6 +167,7 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.ALERT_READ,
         Permission.AUDIT_READ,
         Permission.TRAINING_READ,
+        Permission.CHANGE_READ,
         Permission.DASHBOARD_VIEW,
     },
 }
@@ -191,6 +210,12 @@ PERMISSION_LABELS: dict[Permission, str] = {
     Permission.TRAINING_UPDATE: "Edit training & assign records",
     Permission.TRAINING_CERTIFY: "Certify training (mark trained)",
     Permission.TRAINING_DELETE: "Delete training records",
+    Permission.CHANGE_CREATE: "Create change requests",
+    Permission.CHANGE_READ: "View change requests",
+    Permission.CHANGE_UPDATE: "Edit change requests",
+    Permission.CHANGE_ASSESS: "Assess impact & manage actions",
+    Permission.CHANGE_APPROVE: "Approve or reject changes",
+    Permission.CHANGE_DELETE: "Delete change requests",
     Permission.USER_MANAGE: "Manage users",
     Permission.SETTINGS_MANAGE: "Manage settings & roles",
     Permission.DASHBOARD_VIEW: "View dashboard & reports",
@@ -203,6 +228,7 @@ _GROUP_TITLES = {
     "alert": "Alerts",
     "audit": "Audits",
     "training": "Training",
+    "change": "Change Control",
     "user": "Users",
     "settings": "Settings",
     "dashboard": "Dashboard",
