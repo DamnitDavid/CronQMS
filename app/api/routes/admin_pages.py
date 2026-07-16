@@ -21,7 +21,6 @@ from app.database import get_db
 from app.models import AssigneeGroup, Capa, CustomField, User
 from app.models.custom_field import CustomFieldType
 from app.models.event import EventType
-from app.models.user import Role
 from app.services.custom_fields import fields_for, unique_key
 from app.services import org_settings
 
@@ -33,7 +32,9 @@ templates = Jinja2Templates(
 
 EVENT_TYPES = [t.value for t in EventType]
 FIELD_TYPES = [t.value for t in CustomFieldType]
-ROLES = [r.value for r in Role]
+
+# Default role assigned to a newly created user when none is chosen.
+DEFAULT_NEW_USER_ROLE = "User"
 
 # Default password applied by "reset password" (matches the JSON API).
 RESET_PASSWORD = "ChangeMe123!"
@@ -316,6 +317,35 @@ def _org_users(db: Session, organization_id: int) -> list[User]:
     )
 
 
+def _org_role_names(db: Session, organization_id: int) -> list[str]:
+    """Role names shown in the assignment dropdown (system first, then custom)."""
+    from app.models import RoleDefinition
+
+    roles = (
+        db.query(RoleDefinition)
+        .filter(RoleDefinition.organization_id == organization_id)
+        .order_by(RoleDefinition.is_system.desc(), RoleDefinition.name.asc())
+        .all()
+    )
+    return [r.name for r in roles]
+
+
+def _is_assignable_role(db: Session, organization_id: int, role: str) -> bool:
+    """Whether ``role`` may be assigned to a user in this org.
+
+    Accepts the org's own roles plus the legacy :class:`Role` enum names, which
+    still resolve to their historical permission sets via the resolver's
+    fallback (see ``app.core.permissions._resolve_from_db``). This keeps orgs
+    that predate role seeding working; the dropdown itself only offers real
+    DB-backed roles.
+    """
+    from app.models.user import Role
+
+    if role in _org_role_names(db, organization_id):
+        return True
+    return role in {r.value for r in Role}
+
+
 def _users_redirect(error: Optional[str] = None) -> RedirectResponse:
     url = "/admin/users"
     if error:
@@ -337,7 +367,8 @@ async def users_page(
             "request": request,
             "current_user": current_user,
             "users": _org_users(db, current_user.organization_id),
-            "roles": ROLES,
+            "roles": _org_role_names(db, current_user.organization_id),
+            "default_role": DEFAULT_NEW_USER_ROLE,
             "error": error,
             "notice": notice,
         },
@@ -350,10 +381,10 @@ async def user_create(
     db: Session = Depends(get_db),
     email: str = Form(...),
     password: str = Form(...),
-    role: str = Form(Role.VIEWER.value),
+    role: str = Form(DEFAULT_NEW_USER_ROLE),
 ):
     email = email.strip().lower()
-    if role not in ROLES:
+    if not _is_assignable_role(db, current_user.organization_id, role):
         return _users_redirect("Unknown role.")
     if len(password) < 8:
         return _users_redirect("Password must be at least 8 characters.")
@@ -388,7 +419,7 @@ async def user_set_role(
     role: str = Form(...),
 ):
     user = _user_in_org(db, user_id, current_user.organization_id)
-    if user is None or role not in ROLES:
+    if user is None or not _is_assignable_role(db, current_user.organization_id, role):
         return _users_redirect("Could not update role.")
     user.role = role
     db.add(user)

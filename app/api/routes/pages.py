@@ -21,14 +21,13 @@ from sqlalchemy.orm import Session
 
 from app.api.routes.setup import admin_exists
 from app.core.auth import get_current_user_optional
-from app.core.permissions import Permission, require_permission, role_has_permission
+from app.core.permissions import Permission, require_permission
 from app.core.storage import get_storage
 from app.database import get_db
 from app.models import Attachment, Comment, Event, EventCustomValue, Site, User
 from app.models import EventHistory
 from app.models.custom_field import CustomFieldType
 from app.models.event import EventStatus, EventType
-from app.models.user import Role
 from app.services.custom_fields import fields_for, save_values, values_for
 from app.services.event_workflow import (
     WorkflowError,
@@ -62,11 +61,13 @@ def _event_or_404(db: Session, event_id: int, current_user: User) -> Event:
 
 
 def _permission_flags(user: User) -> dict:
-    """Which action buttons the current user may see."""
-    try:
-        role = Role(user.role)
-    except ValueError:
-        role = None
+    """Which action buttons the current user may see.
+
+    Reads the DB-resolved ``granted_permissions`` set attached to the user by
+    ``get_current_user`` so custom roles are honored (a plain ``Role(...)``
+    coercion would raise on non-enum role names).
+    """
+    granted = getattr(user, "granted_permissions", set())
     checks = {
         "can_edit": Permission.EVENT_UPDATE,
         "can_change_status": Permission.EVENT_CHANGE_STATUS,
@@ -75,7 +76,7 @@ def _permission_flags(user: User) -> dict:
         "can_comment": Permission.EVENT_COMMENT,
         "can_create_alert": Permission.ALERT_CREATE,
     }
-    return {name: bool(role and role_has_permission(role, perm)) for name, perm in checks.items()}
+    return {name: perm.value in granted for name, perm in checks.items()}
 
 
 def _org_user_emails(db: Session, organization_id: int) -> dict[int, str]:
@@ -303,10 +304,7 @@ async def event_filter_fields_fragment(
 
 
 def _permission_flags_create(user: User) -> bool:
-    try:
-        return role_has_permission(Role(user.role), Permission.EVENT_CREATE)
-    except ValueError:
-        return False
+    return Permission.EVENT_CREATE.value in getattr(user, "granted_permissions", set())
 
 
 @router.get("/admin/events/create")

@@ -82,6 +82,13 @@ async def get_current_user(email: str = Depends(get_current_user_email), db: Ses
     from app.core.audit import set_audit_actor
 
     set_audit_actor(db, user.id)
+
+    # Resolve the user's granted permissions once and expose them to templates
+    # (the sidebar gates nav items on this set). Lazy import avoids the
+    # auth -> permissions import cycle, mirroring set_audit_actor above.
+    from app.core.permissions import granted_permissions
+
+    user.granted_permissions = {p.value for p in granted_permissions(db, user)}
     return user
 
 async def get_current_user_optional(

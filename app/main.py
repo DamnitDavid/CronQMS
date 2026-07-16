@@ -12,7 +12,7 @@ import os
 from app.config import get_settings
 from app.core.auth import get_current_user_optional
 from app.database import get_db
-from app.api.routes import admin, admin_pages, alerts, attachments, auth, capas, comments, events, pages, reports, setup, users
+from app.api.routes import account, admin, admin_pages, admin_roles, alerts, attachments, auth, capas, comments, events, pages, reports, setup, users
 from app.api.routes.setup import admin_exists
 
 settings = get_settings()
@@ -73,6 +73,8 @@ app.include_router(pages.router)
 app.include_router(users.router)
 app.include_router(setup.router)
 app.include_router(admin_pages.router)
+app.include_router(admin_roles.router)
+app.include_router(account.router)
 
 
 # Health check endpoint

@@ -1,0 +1,79 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Settings — Roles{% endblock %}
+{% set active_nav = "settings" %}
+{% set settings_tab = "roles" %}
+
+{% block admin_content %}
+{% include "admin/settings/_tabs.html" %}
+
+{% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
+{% if saved %}<div class="alert alert-success">Role saved.</div>{% endif %}
+
+<section class="card" style="margin-bottom: 1rem;">
+    <div class="inline-form" style="justify-content: space-between; align-items: center;">
+        <div>
+            <h2 style="margin: 0;">Roles</h2>
+            <small class="muted">Roles decide what each user can do and see. “Admin” and
+                “User” are built in; create your own for everything in between.</small>
+        </div>
+        <a class="button-primary" href="/admin/settings/roles/new">New role</a>
+    </div>
+</section>
+
+<section class="table-shell">
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Role</th>
+                    <th>Type</th>
+                    <th>Permissions</th>
+                    <th>Users</th>
+                    <th style="width: 1%;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in roles %}
+                <tr>
+                    <td>
+                        <strong>{{ r.name }}</strong>
+                        {% if r.description %}<div class="muted">{{ r.description }}</div>{% endif %}
+                    </td>
+                    <td>
+                        {% if r.is_system %}
+                        <span class="badge">Built-in</span>
+                        {% else %}
+                        <span class="badge">Custom</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r.name == "Admin" %}
+                        All permissions
+                        {% else %}
+                        {{ r.permissions | length }} granted
+                        {% endif %}
+                    </td>
+                    <td>{{ user_counts[r.id] }}</td>
+                    <td>
+                        <div class="inline-form">
+                            {% if r.name == "Admin" %}
+                            <span class="muted">Locked</span>
+                            {% else %}
+                            <a class="button-secondary button-sm" href="/admin/settings/roles/{{ r.id }}">Edit</a>
+                            {% if not r.is_system %}
+                            <form method="post" action="/admin/settings/roles/{{ r.id }}/delete"
+                                  onsubmit="return confirm('Delete the “{{ r.name }}” role?');">
+                                <button class="button-secondary button-sm" type="submit">Delete</button>
+                            </form>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

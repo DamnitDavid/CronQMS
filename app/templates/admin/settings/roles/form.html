@@ -1,0 +1,70 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Settings — {{ "Edit role" if role else "New role" }}{% endblock %}
+{% set active_nav = "settings" %}
+{% set settings_tab = "roles" %}
+
+{% block admin_content %}
+{% include "admin/settings/_tabs.html" %}
+
+{% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
+
+<section class="card" style="max-width: 760px;">
+    <h2>{{ "Edit role" if role else "New role" }}</h2>
+
+    {% if permissions_locked %}
+    <div class="alert alert-success">
+        The <strong>Admin</strong> role always has every permission and can’t be changed.
+    </div>
+    {% endif %}
+
+    <form method="post"
+          action="{{ '/admin/settings/roles/' ~ role.id if role else '/admin/settings/roles' }}">
+        <div class="form-group">
+            <label for="name">Role name</label>
+            <input id="name" name="name" type="text" required maxlength="50"
+                   value="{{ role.name if role else '' }}"
+                   {% if name_locked %}readonly{% endif %}>
+            {% if name_locked %}
+            <small class="muted">Built-in role names can’t be changed.</small>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description</label>
+            <input id="description" name="description" type="text" maxlength="255"
+                   value="{{ role.description if role and role.description else '' }}">
+        </div>
+
+        <fieldset style="border: 1px solid var(--border, #ddd); border-radius: 8px; padding: 1rem; margin-top: 1rem;"
+                  {% if permissions_locked %}disabled{% endif %}>
+            <legend>Permissions</legend>
+            {% if permissions_locked %}
+            <p class="muted">All permissions are granted.</p>
+            {% else %}
+            {% for group_title, perms in catalog %}
+            <div style="margin-bottom: 0.9rem;">
+                <div class="nav-group" style="padding-left: 0;">{{ group_title }}</div>
+                {% for value, label in perms %}
+                <label class="inline-form" style="gap: 0.5rem; align-items: center; display: flex; margin: 0.2rem 0;">
+                    <input type="checkbox" name="permissions" value="{{ value }}"
+                           {% if value in granted %}checked{% endif %}>
+                    {{ label }}
+                </label>
+                {% endfor %}
+            </div>
+            {% endfor %}
+            {% endif %}
+        </fieldset>
+
+        <div class="inline-form" style="margin-top: 1rem; gap: 0.5rem;">
+            {% if not permissions_locked %}
+            <button class="button-primary" type="submit">
+                {{ "Save changes" if role else "Create role" }}
+            </button>
+            {% endif %}
+            <a class="button-secondary" href="/admin/settings/roles">Back to roles</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

@@ -18,7 +18,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.core.permissions import Permission, require_permission, role_has_permission
+from app.core.permissions import Permission, require_permission
 from app.core.storage import get_storage
 from app.database import get_db
 from app.models import (
@@ -31,7 +31,6 @@ from app.models import (
     User,
 )
 from app.models.alert import AlertSeverity, AlertStatus, AlertType
-from app.models.user import Role
 from app.services import org_settings
 
 router = APIRouter(tags=["Alerts"])
@@ -87,17 +86,18 @@ def _org_user_emails(db: Session, organization_id: int) -> dict[int, str]:
 
 
 def _alert_permission_flags(user: User) -> dict:
-    """Which alert action controls the current user may see."""
-    try:
-        role = Role(user.role)
-    except ValueError:
-        role = None
+    """Which alert action controls the current user may see.
+
+    Reads the DB-resolved ``granted_permissions`` set attached by
+    ``get_current_user`` so custom role names are honored.
+    """
+    granted = getattr(user, "granted_permissions", set())
     checks = {
         "can_create": Permission.ALERT_CREATE,
         "can_acknowledge": Permission.ALERT_ACKNOWLEDGE,
         "can_close": Permission.ALERT_CLOSE,
     }
-    return {name: bool(role and role_has_permission(role, perm)) for name, perm in checks.items()}
+    return {name: perm.value in granted for name, perm in checks.items()}
 
 
 def _to_date(value: Optional[str]) -> Optional[date]:
@@ -672,3 +672,49 @@ async def inbox_mark_read(
             f"/admin/alerts/{notification.alert_id}", status_code=status.HTTP_303_SEE_OTHER
         )
     return RedirectResponse("/admin/inbox", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# --- notification bell (shellbar dropdown) ---------------------------------
+def _render_notifications_menu(request: Request, current_user: User, db: Session):
+    """Render the shellbar bell dropdown: unread count + a few recent items."""
+    recent = (
+        db.query(Notification)
+        .filter(Notification.user_id == current_user.id)
+        .order_by(Notification.created_at.desc())
+        .limit(6)
+        .all()
+    )
+    return templates.TemplateResponse(
+        "admin/alerts/_notifications_menu.html",
+        {
+            "request": request,
+            "current_user": current_user,
+            "notifications": recent,
+            "unread_count": _unread_count(db, current_user.id),
+        },
+    )
+
+
+@router.get("/admin/notifications/menu")
+async def notifications_menu(
+    request: Request,
+    current_user: User = Depends(require_permission(Permission.ALERT_READ)),
+    db: Session = Depends(get_db),
+):
+    """HTMX fragment loaded into the shellbar bell dropdown."""
+    return _render_notifications_menu(request, current_user, db)
+
+
+@router.post("/admin/notifications/clear")
+async def notifications_clear(
+    request: Request,
+    current_user: User = Depends(require_permission(Permission.ALERT_READ)),
+    db: Session = Depends(get_db),
+):
+    """Mark all of the current user's notifications read, return the fresh menu."""
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read.is_(False),
+    ).update({Notification.is_read: True})
+    db.commit()
+    return _render_notifications_menu(request, current_user, db)

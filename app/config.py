@@ -34,7 +34,9 @@ class Settings(BaseSettings):
 
     # Authentication
     password_min_length: int = 8
-    session_timeout_minutes: int = 480  # 8 hours
+    # Idle window before the browser auto-logs the user out. Mirrored by the
+    # client-side countdown in app/static/js/idle-logout.js.
+    session_timeout_minutes: int = 15
 
     # Attachments: base directory for the local-disk storage backend. Swap the
     # backend in app/core/storage.py to move to S3.
