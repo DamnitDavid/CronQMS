@@ -1,0 +1,48 @@
+# Render Blueprint (https://render.com/docs/blueprint-spec)
+#
+# Deploys the Proins container plus a managed PostgreSQL database. Render reads
+# this file when you create a Blueprint from the repo. It:
+#   - builds the image from ./Dockerfile
+#   - provisions a managed Postgres and injects DATABASE_URL
+#   - runs `alembic upgrade head` before each deploy goes live (pre-deploy)
+#   - auto-generates strong SECRET_KEY / JWT_SECRET (satisfies the app's
+#     startup guard, which refuses default secrets in production)
+#
+# After the first deploy: set CORS_ORIGINS to your real domain, then open the
+# app to complete the /setup wizard (creates the first organization + admin).
+
+databases:
+  - name: proins-db
+    databaseName: proins
+    plan: basic-256mb  # adjust to your needs; any paid plan includes backups
+
+services:
+  - type: web
+    name: proins
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /health
+    # Run migrations once per deploy, before new instances take traffic. Do NOT
+    # move this into the container CMD — that would race across instances.
+    preDeployCommand: alembic upgrade head
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: ALLOW_PUBLIC_REGISTRATION
+        value: "false"
+      # Render injects PORT automatically; the Dockerfile CMD binds to it.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: proins-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      # Set to your real front-end origin(s) after the first deploy, e.g.
+      # ["https://app.example.com"]. Defaults to localhost until you change it.
+      - key: CORS_ORIGINS
+        sync: false

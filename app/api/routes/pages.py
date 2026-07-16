@@ -20,6 +20,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.api.routes.setup import admin_exists
+from app.config import get_settings
 from app.core.auth import get_current_user_optional
 from app.core.permissions import Permission, require_permission
 from app.core.storage import get_storage
@@ -150,6 +151,10 @@ async def login_page(
 
 @router.get("/register")
 async def register_page(request: Request):
+    # Mirrors the API gate: when public registration is disabled the sign-up
+    # form is not reachable — send visitors to the login page instead.
+    if not get_settings().allow_public_registration:
+        return RedirectResponse("/login", status_code=status.HTTP_303_SEE_OTHER)
     return templates.TemplateResponse("auth/register.html", {"request": request})
 
 

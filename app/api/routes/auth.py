@@ -14,10 +14,15 @@ from app.core.auth import (
     get_current_user,
     set_auth_cookie,
 )
+from app.core.ratelimit import rate_limit
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 settings = get_settings()
+
+# Throttle credential submission to blunt online brute-force. Keyed by client IP
+# and shared between the JSON and browser login paths.
+login_rate_limit = rate_limit(max_hits=10, window_seconds=60, name="login")
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -35,8 +40,16 @@ async def register(
         User: Created user object.
 
     Raises:
-        HTTPException: If email already exists.
+        HTTPException: If registration is disabled or the email already exists.
     """
+    # Secure by default: users are provisioned by an admin (or the first admin
+    # via /setup). Open sign-up is only available when explicitly enabled.
+    if not settings.allow_public_registration:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Public registration is disabled. Contact an administrator for an account.",
+        )
+
     # Check if user already exists
     existing_user = db.query(User).filter(User.email == user_data.email).first()
 
@@ -66,6 +79,7 @@ async def login(
     credentials: UserLogin,
     response: Response,
     db: Session = Depends(get_db),
+    _: None = Depends(login_rate_limit),
 ) -> TokenResponse:
     """Authenticate user (JSON API) and return a JWT token.
 
@@ -129,6 +143,7 @@ async def browser_login(
     email: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_db),
+    _: None = Depends(login_rate_limit),
 ) -> Response:
     """Authenticate a form-encoded (htmx) browser submission.
 

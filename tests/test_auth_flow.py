@@ -11,7 +11,8 @@ from app.config import get_settings
 
 get_settings.cache_clear()
 
-from app.database import Base, engine
+from app.database import Base, SessionLocal, engine
+from app.core.security import hash_password
 from app.main import app
 
 
@@ -30,13 +31,25 @@ class AuthFlowIntegrationTest(unittest.TestCase):
         if os.path.exists(test_db_path):
             os.remove(test_db_path)
 
-    def test_register_login_and_get_current_user(self):
-        register_response = self.client.post(
-            "/api/auth/register",
-            json={"email": self.test_email, "password": self.test_password},
-        )
-        self.assertEqual(register_response.status_code, 201)
-        self.assertEqual(register_response.json()["email"], self.test_email)
+    def _create_user(self):
+        """Provision a user directly (public registration is disabled)."""
+        from app.models import User
+
+        db = SessionLocal()
+        try:
+            db.add(
+                User(
+                    email=self.test_email,
+                    hashed_password=hash_password(self.test_password),
+                    is_active=True,
+                )
+            )
+            db.commit()
+        finally:
+            db.close()
+
+    def test_login_and_get_current_user(self):
+        self._create_user()
 
         login_response = self.client.post(
             "/api/auth/login",

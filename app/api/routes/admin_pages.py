@@ -16,7 +16,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.core.permissions import Permission, require_permission
-from app.core.security import hash_password
+from app.core.security import generate_temp_password, hash_password
 from app.database import get_db
 from app.models import AssigneeGroup, Capa, CustomField, User
 from app.models.custom_field import CustomFieldType
@@ -35,9 +35,6 @@ FIELD_TYPES = [t.value for t in CustomFieldType]
 
 # Default role assigned to a newly created user when none is chosen.
 DEFAULT_NEW_USER_ROLE = "User"
-
-# Default password applied by "reset password" (matches the JSON API).
-RESET_PASSWORD = "ChangeMe123!"
 
 
 # --- Settings: custom fields -----------------------------------------------
@@ -453,11 +450,13 @@ async def user_reset_password(
     user = _user_in_org(db, user_id, current_user.organization_id)
     if user is None:
         return _users_redirect("User not found.")
-    user.hashed_password = hash_password(RESET_PASSWORD)
+    # Random one-time password instead of a shared, guessable default.
+    temp_password = generate_temp_password()
+    user.hashed_password = hash_password(temp_password)
     db.add(user)
     db.commit()
     return RedirectResponse(
-        f"/admin/users?notice={quote(f'Password reset to {RESET_PASSWORD} — share it and have them change it.')}",
+        f"/admin/users?notice={quote(f'Password reset to {temp_password} — share it and have them change it.')}",
         status_code=status.HTTP_303_SEE_OTHER,
     )
 

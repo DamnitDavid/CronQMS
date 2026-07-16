@@ -1,21 +1,37 @@
 # Security Policy
 
-## Supported Versions
-
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
-
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+If you believe you have found a security vulnerability in Proins, please report
+it privately so it can be addressed before public disclosure.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+- **Do not** open a public GitHub issue for security reports.
+- Use GitHub's [private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)
+  on this repository (Security → Report a vulnerability), or contact the
+  maintainer directly.
+- Please include a description of the issue, steps to reproduce, affected
+  version/commit, and impact.
+
+You can expect an acknowledgement within a few business days. Once a report is
+triaged we will keep you informed of remediation progress and coordinate a
+disclosure timeline with you.
+
+## Supported Versions
+
+This project is pre-1.0 and under active development. Security fixes are applied
+to the `main` branch. There is no long-term support commitment for older
+commits or tags yet.
+
+## Deployment Hardening
+
+Proins ships secure-by-default, but a real deployment must configure a few
+things — see the "Production checklist" in [README.md](README.md). In summary:
+
+- Set strong, unique `SECRET_KEY` and `JWT_SECRET` values. The app **refuses to
+  start** in a non-development `ENVIRONMENT` if these are left at the built-in
+  placeholder values.
+- Run with `ENVIRONMENT=production` and `DEBUG=false`. Session cookies are only
+  marked `Secure` outside development, so production must be served over HTTPS.
+- Use real database credentials (not the `docker-compose` development defaults).
+- Public self-registration is disabled by default; leave it disabled unless you
+  explicitly want open sign-ups.

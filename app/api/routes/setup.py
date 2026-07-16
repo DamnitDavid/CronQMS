@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.core.auth import set_auth_cookie
+from app.core.ratelimit import rate_limit
 from app.core.security import create_token_for_user, hash_password
 from app.database import get_db
 from app.models import Organization, User
@@ -25,6 +26,10 @@ from app.models.user import Role
 router = APIRouter(tags=["Setup"])
 
 settings = get_settings()
+
+# The setup POST is unauthenticated (it bootstraps the first admin). Throttle it
+# so it can't be hammered before the first admin exists.
+setup_rate_limit = rate_limit(max_hits=10, window_seconds=60, name="setup")
 
 templates = Jinja2Templates(
     directory=os.path.join(os.path.dirname(__file__), "..", "..", "templates")
@@ -73,6 +78,7 @@ async def setup_submit(
     email: str = Form(...),
     password: str = Form(...),
     confirm_password: str = Form(...),
+    _: None = Depends(setup_rate_limit),
 ) -> Response:
     """Create the first Organization + Admin user and sign the admin in.
 
