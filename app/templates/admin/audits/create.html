@@ -1,0 +1,76 @@
+{% extends "base_admin.html" %}
+
+{% block title %}New Audit{% endblock %}
+{% set active_nav = "audits" %}
+
+{% block admin_content %}
+{% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
+
+<form class="card" method="post" action="/admin/audits/create" style="max-width: 820px;">
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="reference">Reference</label>
+            <input type="text" id="reference" name="reference" required placeholder="e.g. AUD-2026-001">
+        </div>
+        <div class="form-group">
+            <label for="audit_type">Type</label>
+            <select id="audit_type" name="audit_type">
+                {% for t in types %}
+                <option value="{{ t }}">{{ t }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="title">Title</label>
+        <input type="text" id="title" name="title" required minlength="3">
+    </div>
+
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="standard">Standard / Reference</label>
+            <input type="text" id="standard" name="standard" placeholder="e.g. ISO 9001:2015">
+        </div>
+        <div class="form-group">
+            <label for="auditee">Auditee (area / supplier)</label>
+            <input type="text" id="auditee" name="auditee">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="lead_auditor_id">Lead Auditor</label>
+        <select id="lead_auditor_id" name="lead_auditor_id">
+            <option value="">Unassigned</option>
+            {% for u in users %}
+            <option value="{{ u.id }}">{{ u.email }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="scope">Scope</label>
+        <textarea id="scope" name="scope"></textarea>
+    </div>
+
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="planned_date">Planned Date</label>
+            <input type="date" id="planned_date" name="planned_date">
+        </div>
+        <div class="form-group">
+            <label for="start_date">Start Date</label>
+            <input type="date" id="start_date" name="start_date">
+        </div>
+        <div class="form-group">
+            <label for="end_date">End Date</label>
+            <input type="date" id="end_date" name="end_date">
+        </div>
+    </div>
+
+    <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+        <button class="button-primary" type="submit">Create Audit</button>
+        <a class="button-secondary" href="/admin/audits">Cancel</a>
+    </div>
+</form>
+{% endblock %}
