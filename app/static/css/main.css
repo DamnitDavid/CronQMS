@@ -856,6 +856,32 @@ table.data-table tbody tr.overdue td:first-child {
 .doc-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
 .doc-actions form { display: inline-flex; gap: 0.3rem; align-items: center; }
 
+/* Audit statuses */
+.badge.audit-Planned { background: var(--info-soft); color: var(--info); }
+.badge.audit-In_Progress { background: var(--warn-soft); color: var(--warn); }
+.badge.audit-Completed { background: var(--primary-soft); color: var(--primary); }
+.badge.audit-Closed { background: var(--ok-soft); color: var(--ok); }
+.badge.audit-Cancelled { background: var(--neutral-soft); color: var(--neutral); }
+
+/* Audit checklist results */
+.badge.result-Pending { background: var(--neutral-soft); color: var(--neutral); }
+.badge.result-Conforms { background: var(--ok-soft); color: var(--ok); }
+.badge.result-Minor_NC { background: var(--warn-soft); color: var(--warn); }
+.badge.result-Major_NC { background: var(--danger-soft); color: var(--danger); }
+.badge.result-Observation { background: var(--info-soft); color: var(--info); }
+.badge.result-Not_Applicable { background: var(--neutral-soft); color: var(--neutral); }
+
+/* Audit finding severities */
+.badge.severity-OFI { background: var(--neutral-soft); color: var(--neutral); }
+.badge.severity-Observation { background: var(--info-soft); color: var(--info); }
+.badge.severity-Minor { background: var(--warn-soft); color: var(--warn); }
+.badge.severity-Major { background: var(--danger-soft); color: var(--danger); }
+
+/* Audit finding statuses */
+.badge.finding-Open { background: var(--info-soft); color: var(--info); }
+.badge.finding-In_Progress { background: var(--warn-soft); color: var(--warn); }
+.badge.finding-Closed { background: var(--ok-soft); color: var(--ok); }
+
 /* Boolean custom-field input row */
 .checkbox-row {
     display: flex;

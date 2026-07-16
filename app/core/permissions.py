@@ -41,6 +41,12 @@ class Permission(str, Enum):
     ALERT_READ = "alert:read"
     ALERT_ACKNOWLEDGE = "alert:acknowledge"
     ALERT_CLOSE = "alert:close"
+    AUDIT_CREATE = "audit:create"
+    AUDIT_READ = "audit:read"
+    AUDIT_UPDATE = "audit:update"
+    AUDIT_CONDUCT = "audit:conduct"
+    AUDIT_CLOSE = "audit:close"
+    AUDIT_DELETE = "audit:delete"
     USER_MANAGE = "user:manage"
     SETTINGS_MANAGE = "settings:manage"
     DASHBOARD_VIEW = "dashboard:view"
@@ -74,6 +80,12 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.ALERT_READ,
         Permission.ALERT_ACKNOWLEDGE,
         Permission.ALERT_CLOSE,
+        Permission.AUDIT_CREATE,
+        Permission.AUDIT_READ,
+        Permission.AUDIT_UPDATE,
+        Permission.AUDIT_CONDUCT,
+        Permission.AUDIT_CLOSE,
+        Permission.AUDIT_DELETE,
         Permission.DASHBOARD_VIEW,
     },
     Role.INVESTIGATOR: {
@@ -91,6 +103,10 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.ALERT_CREATE,
         Permission.ALERT_READ,
         Permission.ALERT_ACKNOWLEDGE,
+        Permission.AUDIT_CREATE,
+        Permission.AUDIT_READ,
+        Permission.AUDIT_UPDATE,
+        Permission.AUDIT_CONDUCT,
         Permission.DASHBOARD_VIEW,
     },
     Role.APPROVER: {
@@ -106,6 +122,8 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.DOCUMENT_OBSOLETE,
         Permission.ALERT_READ,
         Permission.ALERT_ACKNOWLEDGE,
+        Permission.AUDIT_READ,
+        Permission.AUDIT_CLOSE,
         Permission.DASHBOARD_VIEW,
     },
     Role.VIEWER: {
@@ -113,6 +131,7 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.CAPA_READ,
         Permission.DOCUMENT_READ,
         Permission.ALERT_READ,
+        Permission.AUDIT_READ,
         Permission.DASHBOARD_VIEW,
     },
 }
@@ -144,6 +163,12 @@ PERMISSION_LABELS: dict[Permission, str] = {
     Permission.ALERT_READ: "View alerts & inbox",
     Permission.ALERT_ACKNOWLEDGE: "Acknowledge alerts",
     Permission.ALERT_CLOSE: "Close alerts",
+    Permission.AUDIT_CREATE: "Create & plan audits",
+    Permission.AUDIT_READ: "View audits",
+    Permission.AUDIT_UPDATE: "Edit audits",
+    Permission.AUDIT_CONDUCT: "Conduct audits (checklists & findings)",
+    Permission.AUDIT_CLOSE: "Close audits",
+    Permission.AUDIT_DELETE: "Delete audits",
     Permission.USER_MANAGE: "Manage users",
     Permission.SETTINGS_MANAGE: "Manage settings & roles",
     Permission.DASHBOARD_VIEW: "View dashboard & reports",
@@ -154,6 +179,7 @@ _GROUP_TITLES = {
     "capa": "CAPA",
     "document": "Documents",
     "alert": "Alerts",
+    "audit": "Audits",
     "user": "Users",
     "settings": "Settings",
     "dashboard": "Dashboard",

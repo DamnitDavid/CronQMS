@@ -1,0 +1,39 @@
+<section id="auditTable" class="table-shell">
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Reference</th>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Lead Auditor</th>
+                    <th>Auditee</th>
+                    <th>Planned</th>
+                    <th class="num">Findings</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if audits %}
+                    {% for audit in audits %}
+                    <tr>
+                        <td><a href="/admin/audits/{{ audit.id }}">{{ audit.reference }}</a></td>
+                        <td>{{ audit.title }}</td>
+                        <td>{{ audit.audit_type }}</td>
+                        <td><span class="badge audit-{{ audit.status }}">{{ audit.status.replace('_', ' ') }}</span></td>
+                        <td>{{ auditor_emails.get(audit.lead_auditor_id, "—") }}</td>
+                        <td>{{ audit.auditee or "—" }}</td>
+                        <td>{{ audit.planned_date or "—" }}</td>
+                        <td class="num">
+                            {{ audit.findings | length }}
+                            {% if audit.open_findings_count %}<span class="badge overdue">{{ audit.open_findings_count }} open</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="8" class="table-empty">No audits recorded yet.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</section>

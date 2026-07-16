@@ -11,6 +11,16 @@ from app.models.document import (
     DocumentCategory,
     DocumentVersionStatus,
 )
+from app.models.audit import (
+    Audit,
+    AuditChecklistItem,
+    AuditFinding,
+    AuditType,
+    AuditStatus,
+    ChecklistResult,
+    FindingSeverity,
+    FindingStatus,
+)
 from app.models.attachment import Attachment
 from app.models.comment import Comment
 from app.models.event_history import EventHistory
@@ -36,6 +46,8 @@ register_auditing(Capa)
 register_auditing(Alert)
 register_auditing(Document)
 register_auditing(DocumentVersion)
+register_auditing(Audit)
+register_auditing(AuditFinding)
 
 __all__ = [
     "User",
@@ -54,6 +66,14 @@ __all__ = [
     "DocumentVersion",
     "DocumentCategory",
     "DocumentVersionStatus",
+    "Audit",
+    "AuditChecklistItem",
+    "AuditFinding",
+    "AuditType",
+    "AuditStatus",
+    "ChecklistResult",
+    "FindingSeverity",
+    "FindingStatus",
     "Attachment",
     "Comment",
     "EventHistory",

@@ -12,7 +12,7 @@ import os
 from app.config import get_settings
 from app.core.auth import get_current_user_optional
 from app.database import get_db
-from app.api.routes import account, admin, admin_pages, admin_roles, alerts, attachments, auth, capas, comments, document_pages, documents, events, pages, reports, setup, users
+from app.api.routes import account, admin, admin_pages, admin_roles, alerts, attachments, audit_pages, audits, auth, capas, comments, document_pages, documents, events, pages, reports, setup, users
 from app.api.routes.setup import admin_exists
 
 settings = get_settings()
@@ -66,6 +66,8 @@ app.include_router(events.router)
 app.include_router(capas.router)
 app.include_router(documents.router)
 app.include_router(document_pages.router)
+app.include_router(audits.router)
+app.include_router(audit_pages.router)
 app.include_router(alerts.router)
 app.include_router(attachments.router)
 app.include_router(comments.router)
