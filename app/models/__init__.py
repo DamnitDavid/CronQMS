@@ -1,6 +1,7 @@
 """SQLAlchemy models for Proins."""
 
 from app.models.user import User, Role
+from app.models.role import RoleDefinition, RolePermission
 from app.models.organization import Organization, Site, OrgSetting
 from app.models.event import Event
 from app.models.capa import Capa, CapaStatus, VerificationOutcome, capa_events
@@ -31,6 +32,8 @@ register_auditing(Alert)
 __all__ = [
     "User",
     "Role",
+    "RoleDefinition",
+    "RolePermission",
     "Organization",
     "Site",
     "OrgSetting",

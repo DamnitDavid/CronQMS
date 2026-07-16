@@ -76,7 +76,7 @@
                 <label for="role">Role</label>
                 <select id="role" name="role">
                     {% for r in roles %}
-                    <option value="{{ r }}" {% if r == "Viewer" %}selected{% endif %}>{{ r }}</option>
+                    <option value="{{ r }}" {% if r == default_role | default('User') %}selected{% endif %}>{{ r }}</option>
                     {% endfor %}
                 </select>
             </div>

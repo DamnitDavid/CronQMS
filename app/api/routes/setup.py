@@ -103,6 +103,12 @@ async def setup_submit(
     db.add(organization)
     db.flush()  # assign organization.id before creating the user
 
+    # Seed the org's Admin + User system roles so role management works out of
+    # the box (the admin below resolves to the Admin role).
+    from app.services.rbac import seed_system_roles
+
+    seed_system_roles(db, organization.id)
+
     admin = User(
         email=email,
         hashed_password=hash_password(password),

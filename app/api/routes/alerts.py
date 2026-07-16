@@ -18,7 +18,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.core.permissions import Permission, require_permission, role_has_permission
+from app.core.permissions import Permission, require_permission
 from app.core.storage import get_storage
 from app.database import get_db
 from app.models import (
@@ -31,7 +31,6 @@ from app.models import (
     User,
 )
 from app.models.alert import AlertSeverity, AlertStatus, AlertType
-from app.models.user import Role
 from app.services import org_settings
 
 router = APIRouter(tags=["Alerts"])
@@ -87,17 +86,18 @@ def _org_user_emails(db: Session, organization_id: int) -> dict[int, str]:
 
 
 def _alert_permission_flags(user: User) -> dict:
-    """Which alert action controls the current user may see."""
-    try:
-        role = Role(user.role)
-    except ValueError:
-        role = None
+    """Which alert action controls the current user may see.
+
+    Reads the DB-resolved ``granted_permissions`` set attached by
+    ``get_current_user`` so custom role names are honored.
+    """
+    granted = getattr(user, "granted_permissions", set())
     checks = {
         "can_create": Permission.ALERT_CREATE,
         "can_acknowledge": Permission.ALERT_ACKNOWLEDGE,
         "can_close": Permission.ALERT_CLOSE,
     }
-    return {name: bool(role and role_has_permission(role, perm)) for name, perm in checks.items()}
+    return {name: perm.value in granted for name, perm in checks.items()}
 
 
 def _to_date(value: Optional[str]) -> Optional[date]:
