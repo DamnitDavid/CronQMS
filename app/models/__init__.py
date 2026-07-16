@@ -27,6 +27,17 @@ from app.models.training import (
     TrainingRecord,
     TrainingStatus,
 )
+from app.models.change import (
+    ChangeRequest,
+    ChangeImpact,
+    ChangeAction,
+    ChangeType,
+    ChangeStatus,
+    RiskLevel,
+    ImpactArea,
+    ImpactLevel,
+    ActionStatus,
+)
 from app.models.attachment import Attachment
 from app.models.comment import Comment
 from app.models.event_history import EventHistory
@@ -57,6 +68,8 @@ register_auditing(AuditFinding)
 register_auditing(Employee)
 register_auditing(TrainingCourse)
 register_auditing(TrainingRecord)
+register_auditing(ChangeRequest)
+register_auditing(ChangeAction)
 
 __all__ = [
     "User",
@@ -87,6 +100,15 @@ __all__ = [
     "TrainingCourse",
     "TrainingRecord",
     "TrainingStatus",
+    "ChangeRequest",
+    "ChangeImpact",
+    "ChangeAction",
+    "ChangeType",
+    "ChangeStatus",
+    "RiskLevel",
+    "ImpactArea",
+    "ImpactLevel",
+    "ActionStatus",
     "Attachment",
     "Comment",
     "EventHistory",

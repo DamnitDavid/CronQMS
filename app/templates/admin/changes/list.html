@@ -1,0 +1,43 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Change Control{% endblock %}
+{% set active_nav = "changes" %}
+
+{% block admin_content %}
+{% if perms.can_create %}
+<section class="page-actions">
+    <a class="button-primary" href="/admin/changes/create">New Change Request</a>
+</section>
+{% endif %}
+
+<section class="filter-bar">
+    <form class="filter-form"
+          hx-get="/admin/changes"
+          hx-target="#changeTable"
+          hx-swap="outerHTML"
+          hx-include="this">
+        <label>
+            Type
+            <select name="change_type">
+                <option value="">All</option>
+                {% for t in types %}
+                <option value="{{ t }}" {% if filters.change_type == t %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            Status
+            <select name="status">
+                <option value="">All</option>
+                {% for s in statuses %}
+                <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s.replace('_', ' ') }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button type="submit">Filter</button>
+        <a class="button-secondary" href="/admin/changes">Reset</a>
+    </form>
+</section>
+
+{% include "admin/changes/_change_table.html" %}
+{% endblock %}

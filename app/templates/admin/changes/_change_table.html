@@ -1,0 +1,39 @@
+<section id="changeTable" class="table-shell">
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Reference</th>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Risk</th>
+                    <th>Owner</th>
+                    <th>Target</th>
+                    <th class="num">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if changes %}
+                    {% for change in changes %}
+                    <tr>
+                        <td><a href="/admin/changes/{{ change.id }}">{{ change.reference }}</a></td>
+                        <td>{{ change.title }}</td>
+                        <td>{{ change.change_type }}</td>
+                        <td><span class="badge change-{{ change.status }}">{{ change.status.replace('_', ' ') }}</span></td>
+                        <td><span class="badge risk-{{ change.risk_level }}">{{ change.risk_level }}</span></td>
+                        <td>{{ owner_emails.get(change.owner_id, "—") }}</td>
+                        <td>{{ change.target_date or "—" }}</td>
+                        <td class="num">
+                            {{ change.actions | length }}
+                            {% if change.open_actions_count %}<span class="badge overdue">{{ change.open_actions_count }} open</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="8" class="table-empty">No change requests recorded yet.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</section>
