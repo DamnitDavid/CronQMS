@@ -1,0 +1,65 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Employees{% endblock %}
+{% set active_nav = "training" %}
+
+{% block admin_content %}
+{% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
+
+<div class="crumb" style="margin-bottom: 1rem;">
+    <a href="/admin/training">Training</a> &middot; Employees
+</div>
+
+<p class="field-hint" style="margin-bottom: 1rem;">
+    Baseline operation employees without computer or email access. They are trained on SOPs
+    and certified by a supervisor — they do not log in.
+</p>
+
+{% if perms.can_create %}
+<section class="page-actions">
+    <a class="button-primary" href="/admin/training/employees/create">New Employee</a>
+</section>
+{% endif %}
+
+<section class="table-shell">
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Employee #</th>
+                    <th>Department</th>
+                    <th>Job Title</th>
+                    {% if perms.can_edit or perms.can_delete %}<th>Actions</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% if employees %}
+                    {% for e in employees %}
+                    <tr>
+                        <td>{{ e.full_name }}</td>
+                        <td>{{ e.employee_number or "—" }}</td>
+                        <td>{{ e.department or "—" }}</td>
+                        <td>{{ e.job_title or "—" }}</td>
+                        {% if perms.can_edit or perms.can_delete %}
+                        <td>
+                            <div class="inline-form" style="gap: 0.4rem;">
+                                {% if perms.can_edit %}<a class="button-sm button-secondary" href="/admin/training/employees/{{ e.id }}/edit">Edit</a>{% endif %}
+                                {% if perms.can_delete %}
+                                <form method="post" action="/admin/training/employees/{{ e.id }}/delete" onsubmit="return confirm('Remove this employee?');">
+                                    <button class="button-sm button-secondary" type="submit">Delete</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="5" class="table-empty">No employees registered yet.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

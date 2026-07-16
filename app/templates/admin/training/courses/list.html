@@ -1,0 +1,49 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Training Courses{% endblock %}
+{% set active_nav = "training" %}
+
+{% block admin_content %}
+{% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
+
+<div class="crumb" style="margin-bottom: 1rem;">
+    <a href="/admin/training">Training</a> &middot; Courses
+</div>
+
+{% if perms.can_create %}
+<section class="page-actions">
+    <a class="button-primary" href="/admin/training/courses/create">New Course</a>
+</section>
+{% endif %}
+
+<section class="table-shell">
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Title</th>
+                    <th>Linked SOP</th>
+                    <th>Recert (months)</th>
+                    <th class="num">Records</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if courses %}
+                    {% for c in courses %}
+                    <tr>
+                        <td><a href="/admin/training/courses/{{ c.id }}">{{ c.code }}</a></td>
+                        <td>{{ c.title }}</td>
+                        <td>{% if c.document %}<a href="/admin/documents/{{ c.document.id }}">{{ c.document.document_number }}</a>{% else %}—{% endif %}</td>
+                        <td>{{ c.recertification_period_months or "—" }}</td>
+                        <td class="num">{{ c.records | length }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="5" class="table-empty">No courses defined yet.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,146 @@
+{% extends "base_admin.html" %}
+
+{% block title %}{{ course.code }} — {{ course.title }}{% endblock %}
+{% set active_nav = "training" %}
+{% set self_url = "/admin/training/courses/" ~ course.id %}
+
+{% block page_heading %}
+<h1>{{ course.title }}</h1>
+<div class="crumb">
+    <a href="/admin/training">Training</a> &middot;
+    <a href="/admin/training/courses">Courses</a> &middot; {{ course.code }}
+</div>
+{% endblock %}
+
+{% block admin_content %}
+{% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
+
+<section class="card action-bar">
+    {% if perms.can_edit %}<a class="button-secondary" href="/admin/training/courses/{{ course.id }}/edit">Edit</a>{% endif %}
+    {% if course.document %}<a class="button-primary" href="/admin/documents/{{ course.document.id }}">Open SOP</a>{% endif %}
+    {% if perms.can_delete %}
+    <form method="post" action="/admin/training/courses/{{ course.id }}/delete" onsubmit="return confirm('Delete this course?');">
+        <button class="button-secondary" type="submit">Delete</button>
+    </form>
+    {% endif %}
+</section>
+
+<section class="detail-grid">
+    <div class="field"><div class="label">Code</div><div class="value">{{ course.code }}</div></div>
+    <div class="field"><div class="label">Linked SOP</div><div class="value">{% if course.document %}<a href="/admin/documents/{{ course.document.id }}">{{ course.document.document_number }} — {{ course.document.title }}</a>{% else %}—{% endif %}</div></div>
+    <div class="field"><div class="label">Recertification</div><div class="value">{% if course.recertification_period_months %}every {{ course.recertification_period_months }} months{% else %}No expiry{% endif %}</div></div>
+</section>
+
+{% if course.description %}
+<section class="card">
+    <h2>Description</h2>
+    <p>{{ course.description }}</p>
+</section>
+{% endif %}
+
+{% if perms.can_edit %}
+<section class="card">
+    <h2>Assign This Course</h2>
+    <form method="post" action="/admin/training/assign" class="inline-form" style="flex-wrap: wrap;">
+        <input type="hidden" name="course_id" value="{{ course.id }}">
+        <select name="trainee" required>
+            <option value="">Select trainee…</option>
+            {% if employees %}
+            <optgroup label="Employees (no login)">
+                {% for e in employees %}
+                <option value="emp:{{ e.id }}">{{ e.full_name }}{% if e.employee_number %} ({{ e.employee_number }}){% endif %}</option>
+                {% endfor %}
+            </optgroup>
+            {% endif %}
+            {% if users %}
+            <optgroup label="System users">
+                {% for u in users %}
+                <option value="user:{{ u.id }}">{{ u.email }}</option>
+                {% endfor %}
+            </optgroup>
+            {% endif %}
+        </select>
+        <input type="text" name="notes" placeholder="Notes (optional)" style="flex: 1;">
+        <button class="button-primary" type="submit">Assign</button>
+    </form>
+</section>
+{% endif %}
+
+<section class="card">
+    <h2>Training Records</h2>
+    {% if records %}
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Trainee</th>
+                    <th>Status</th>
+                    <th>Trained</th>
+                    <th>Trainer</th>
+                    <th>Acknowledgment</th>
+                    <th>Expires</th>
+                    {% if perms.can_certify or perms.can_delete %}<th>Actions</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td>{{ r.trainee_name }}{% if r.employee_id %}<span class="muted"> · operator</span>{% endif %}</td>
+                    <td><span class="badge training-{{ r.effective_status }}">{{ r.effective_status.replace('_', ' ') }}</span></td>
+                    <td>{{ r.trained_date or "—" }}</td>
+                    <td>{{ r.trainer.email if r.trainer else "—" }}</td>
+                    <td>{{ r.trainee_acknowledgment or "—" }}</td>
+                    <td>{% if r.expiry_date %}{{ r.expiry_date }}{% if r.is_expired %} <span class="badge overdue">expired</span>{% endif %}{% else %}—{% endif %}</td>
+                    {% if perms.can_certify or perms.can_delete %}
+                    <td>
+                        <div class="inline-form" style="flex-wrap: wrap; gap: 0.4rem;">
+                            {% if perms.can_certify and (r.status != 'Trained' or r.is_expired) %}
+                            <form method="post" action="/admin/training/records/{{ r.id }}/certify" class="inline-form" style="gap: 0.4rem;">
+                                <input type="hidden" name="redirect_to" value="{{ self_url }}">
+                                <input type="text" name="trainee_acknowledgment" placeholder="Trainee name" required style="min-width: 160px;">
+                                <button class="button-sm button-primary" type="submit">Mark Trained</button>
+                            </form>
+                            {% endif %}
+                            {% if perms.can_delete %}
+                            <form method="post" action="/admin/training/records/{{ r.id }}/delete" onsubmit="return confirm('Delete this record?');">
+                                <input type="hidden" name="redirect_to" value="{{ self_url }}">
+                                <button class="button-sm button-secondary" type="submit">Delete</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="muted">No trainees assigned yet.</p>
+    {% endif %}
+</section>
+
+<section class="card">
+    <h2>Course History</h2>
+    {% if history %}
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead><tr><th>When</th><th>Field</th><th>From</th><th>To</th><th>Actor</th></tr></thead>
+            <tbody>
+                {% for h in history %}
+                <tr>
+                    <td>{{ h.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ h.field }}</td>
+                    <td>{{ h.old_value if h.old_value is not none else "—" }}</td>
+                    <td>{{ h.new_value if h.new_value is not none else "—" }}</td>
+                    <td>{{ h.actor_id if h.actor_id else "system" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="muted">No history recorded.</p>
+    {% endif %}
+</section>
+{% endblock %}

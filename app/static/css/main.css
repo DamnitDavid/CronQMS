@@ -882,6 +882,13 @@ table.data-table tbody tr.overdue td:first-child {
 .badge.finding-In_Progress { background: var(--warn-soft); color: var(--warn); }
 .badge.finding-Closed { background: var(--ok-soft); color: var(--ok); }
 
+/* Training record status badges */
+.badge.training-Assigned { background: var(--info-soft); color: var(--info); }
+.badge.training-In_Progress { background: var(--warn-soft); color: var(--warn); }
+.badge.training-Trained { background: var(--ok-soft); color: var(--ok); }
+.badge.training-Waived { background: var(--neutral-soft); color: var(--neutral); }
+.badge.training-Expired { background: var(--danger-soft); color: var(--danger); }
+
 /* Boolean custom-field input row */
 .checkbox-row {
     display: flex;

@@ -21,6 +21,12 @@ from app.models.audit import (
     FindingSeverity,
     FindingStatus,
 )
+from app.models.training import (
+    Employee,
+    TrainingCourse,
+    TrainingRecord,
+    TrainingStatus,
+)
 from app.models.attachment import Attachment
 from app.models.comment import Comment
 from app.models.event_history import EventHistory
@@ -48,6 +54,9 @@ register_auditing(Document)
 register_auditing(DocumentVersion)
 register_auditing(Audit)
 register_auditing(AuditFinding)
+register_auditing(Employee)
+register_auditing(TrainingCourse)
+register_auditing(TrainingRecord)
 
 __all__ = [
     "User",
@@ -74,6 +83,10 @@ __all__ = [
     "ChecklistResult",
     "FindingSeverity",
     "FindingStatus",
+    "Employee",
+    "TrainingCourse",
+    "TrainingRecord",
+    "TrainingStatus",
     "Attachment",
     "Comment",
     "EventHistory",

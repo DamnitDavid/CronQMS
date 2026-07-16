@@ -47,6 +47,11 @@ class Permission(str, Enum):
     AUDIT_CONDUCT = "audit:conduct"
     AUDIT_CLOSE = "audit:close"
     AUDIT_DELETE = "audit:delete"
+    TRAINING_CREATE = "training:create"
+    TRAINING_READ = "training:read"
+    TRAINING_UPDATE = "training:update"
+    TRAINING_CERTIFY = "training:certify"
+    TRAINING_DELETE = "training:delete"
     USER_MANAGE = "user:manage"
     SETTINGS_MANAGE = "settings:manage"
     DASHBOARD_VIEW = "dashboard:view"
@@ -86,6 +91,11 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.AUDIT_CONDUCT,
         Permission.AUDIT_CLOSE,
         Permission.AUDIT_DELETE,
+        Permission.TRAINING_CREATE,
+        Permission.TRAINING_READ,
+        Permission.TRAINING_UPDATE,
+        Permission.TRAINING_CERTIFY,
+        Permission.TRAINING_DELETE,
         Permission.DASHBOARD_VIEW,
     },
     Role.INVESTIGATOR: {
@@ -107,6 +117,10 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.AUDIT_READ,
         Permission.AUDIT_UPDATE,
         Permission.AUDIT_CONDUCT,
+        Permission.TRAINING_CREATE,
+        Permission.TRAINING_READ,
+        Permission.TRAINING_UPDATE,
+        Permission.TRAINING_CERTIFY,
         Permission.DASHBOARD_VIEW,
     },
     Role.APPROVER: {
@@ -124,6 +138,8 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.ALERT_ACKNOWLEDGE,
         Permission.AUDIT_READ,
         Permission.AUDIT_CLOSE,
+        Permission.TRAINING_READ,
+        Permission.TRAINING_CERTIFY,
         Permission.DASHBOARD_VIEW,
     },
     Role.VIEWER: {
@@ -132,6 +148,7 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.DOCUMENT_READ,
         Permission.ALERT_READ,
         Permission.AUDIT_READ,
+        Permission.TRAINING_READ,
         Permission.DASHBOARD_VIEW,
     },
 }
@@ -169,6 +186,11 @@ PERMISSION_LABELS: dict[Permission, str] = {
     Permission.AUDIT_CONDUCT: "Conduct audits (checklists & findings)",
     Permission.AUDIT_CLOSE: "Close audits",
     Permission.AUDIT_DELETE: "Delete audits",
+    Permission.TRAINING_CREATE: "Create training courses & employees",
+    Permission.TRAINING_READ: "View training records",
+    Permission.TRAINING_UPDATE: "Edit training & assign records",
+    Permission.TRAINING_CERTIFY: "Certify training (mark trained)",
+    Permission.TRAINING_DELETE: "Delete training records",
     Permission.USER_MANAGE: "Manage users",
     Permission.SETTINGS_MANAGE: "Manage settings & roles",
     Permission.DASHBOARD_VIEW: "View dashboard & reports",
@@ -180,6 +202,7 @@ _GROUP_TITLES = {
     "document": "Documents",
     "alert": "Alerts",
     "audit": "Audits",
+    "training": "Training",
     "user": "Users",
     "settings": "Settings",
     "dashboard": "Dashboard",
