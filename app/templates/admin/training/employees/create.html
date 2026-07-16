@@ -1,0 +1,33 @@
+{% extends "base_admin.html" %}
+
+{% block title %}New Employee{% endblock %}
+{% set active_nav = "training" %}
+
+{% block admin_content %}
+{% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
+
+<form class="card" method="post" action="/admin/training/employees/create" style="max-width: 720px;">
+    <div class="form-group">
+        <label for="full_name">Full Name</label>
+        <input type="text" id="full_name" name="full_name" required>
+    </div>
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="employee_number">Employee # / Badge</label>
+            <input type="text" id="employee_number" name="employee_number">
+        </div>
+        <div class="form-group">
+            <label for="department">Department</label>
+            <input type="text" id="department" name="department">
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="job_title">Job Title</label>
+        <input type="text" id="job_title" name="job_title">
+    </div>
+    <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+        <button class="button-primary" type="submit">Create Employee</button>
+        <a class="button-secondary" href="/admin/training/employees">Cancel</a>
+    </div>
+</form>
+{% endblock %}
