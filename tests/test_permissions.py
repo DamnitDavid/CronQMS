@@ -221,6 +221,30 @@ class PermissionMatrixTest(unittest.TestCase):
         self.assertEqual(body["items"], [])
         self.assertEqual(body["total"], 0)
 
+    def test_users_api_is_org_scoped(self):
+        # The other-org admin must not see the primary org's users...
+        listed = self.client.get(
+            "/api/users/",
+            headers={"Authorization": f"Bearer {self.other_admin_token}"},
+        )
+        self.assertEqual(listed.status_code, 200)
+        returned_ids = {u["id"] for u in listed.json()}
+        self.assertTrue(returned_ids.isdisjoint(set(self.user_ids.values())))
+
+        # ...nor fetch or reset one of them by id (cross-tenant IDOR).
+        victim_id = self.user_ids[Role.ADMIN]
+        other_headers = {"Authorization": f"Bearer {self.other_admin_token}"}
+        self.assertEqual(
+            self.client.get(f"/api/users/{victim_id}", headers=other_headers).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.post(
+                f"/api/users/{victim_id}/reset-password", headers=other_headers
+            ).status_code,
+            404,
+        )
+
     def test_unauthenticated_is_rejected(self):
         self.assertIn(self.client.get("/api/events/").status_code, (401, 403))
 

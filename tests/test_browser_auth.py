@@ -13,6 +13,7 @@ from app.config import get_settings
 
 get_settings.cache_clear()
 
+from app.core.security import hash_password
 from app.database import Base, SessionLocal, engine
 from app.main import app
 from app.models import User
@@ -40,18 +41,20 @@ class BrowserAuthFlowTest(unittest.TestCase):
             os.remove(db_path)
 
     def _register_admin(self):
-        response = self.client.post(
-            "/api/auth/register",
-            json={"email": self.email, "password": self.password},
-        )
-        self.assertEqual(response.status_code, 201)
-        # Registration defaults to Viewer; promote to Admin so the dashboard,
-        # which requires admin privileges, is reachable.
+        # Public registration is disabled, so provision the admin directly. The
+        # dashboard requires admin privileges, hence role="Admin".
         db = SessionLocal()
         try:
-            user = db.query(User).filter(User.email == self.email).first()
-            user.role = "Admin"
-            db.commit()
+            if db.query(User).filter(User.email == self.email).first() is None:
+                db.add(
+                    User(
+                        email=self.email,
+                        hashed_password=hash_password(self.password),
+                        role="Admin",
+                        is_active=True,
+                    )
+                )
+                db.commit()
         finally:
             db.close()
 

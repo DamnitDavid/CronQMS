@@ -1,5 +1,7 @@
 """Security utilities for password hashing and JWT token management."""
 
+import secrets
+import string
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 
@@ -36,6 +38,21 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         bool: True if password matches, False otherwise.
     """
     return pwd_context.verify(plain_password, hashed_password)
+
+
+def generate_temp_password(length: int = 16) -> str:
+    """Generate a cryptographically-random temporary password.
+
+    Used for admin-initiated password resets so a reset account is never left on
+    a shared, guessable value. The result is shown to the admin once (to relay
+    to the user) and is never stored in plaintext.
+    """
+    alphabet = string.ascii_letters + string.digits
+    # Guarantee at least one letter and one digit, then fill the rest randomly.
+    core = [secrets.choice(string.ascii_letters), secrets.choice(string.digits)]
+    core += [secrets.choice(alphabet) for _ in range(max(length, 12) - 2)]
+    secrets.SystemRandom().shuffle(core)
+    return "".join(core)
 
 
 def create_access_token(
