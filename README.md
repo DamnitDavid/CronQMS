@@ -1,4 +1,4 @@
-# Proins
+# Pro-Ins-QMS
 
 Proins is a **Quality Event Management System (QMS)** for manufacturing SMBs. It
 tracks the quality lifecycle end to end — events, investigations, corrective and
