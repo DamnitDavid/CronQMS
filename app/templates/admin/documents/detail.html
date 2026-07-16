@@ -1,0 +1,153 @@
+{% extends "base_admin.html" %}
+
+{% block title %}{{ document.document_number }} — {{ document.title }}{% endblock %}
+{% set active_nav = "documents" %}
+
+{% block page_heading %}
+<h1>{{ document.title }}</h1>
+<div class="crumb">
+    <a href="/admin/documents">Documents</a> &middot; {{ document.document_number }}
+    &middot; {{ document.category.replace('_', ' ') }}
+    &middot; <span class="badge doc-{{ document.status }}">{{ document.status.replace('_', ' ') }}</span>
+</div>
+{% endblock %}
+
+{% block admin_content %}
+{% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
+
+<section class="card action-bar">
+    {% if perms.can_edit %}<a class="button-secondary" href="/admin/documents/{{ document.id }}/edit">Edit</a>{% endif %}
+    {% if perms.can_delete %}
+    <form method="post" action="/admin/documents/{{ document.id }}/delete" onsubmit="return confirm('Delete this document?');">
+        <button class="button-secondary" type="submit">Delete</button>
+    </form>
+    {% endif %}
+</section>
+
+<section class="detail-grid">
+    <div class="field"><div class="label">Owner</div><div class="value">{{ user_emails.get(document.owner_id, "Unassigned") }}</div></div>
+    <div class="field"><div class="label">Category</div><div class="value">{{ document.category.replace('_', ' ') }}</div></div>
+    <div class="field"><div class="label">Effective Version</div><div class="value">
+        {% if current_version %}v{{ current_version.version_number }} ({{ current_version.effective_date }}){% else %}None{% endif %}
+    </div></div>
+    <div class="field"><div class="label">Review Period</div><div class="value">{{ document.review_period_months ~ " months" if document.review_period_months else "—" }}</div></div>
+    <div class="field"><div class="label">Next Review</div><div class="value">
+        {% if document.next_review_date %}{{ document.next_review_date }}{% if document.next_review_date <= today %} <span class="badge overdue">Due</span>{% endif %}{% else %}—{% endif %}
+    </div></div>
+    <div class="field"><div class="label">Retention Period</div><div class="value">{{ document.retention_period_months ~ " months" if document.retention_period_months else "—" }}</div></div>
+    <div class="field"><div class="label">Retention Until</div><div class="value">
+        {% if document.retention_until %}{{ document.retention_until }}{% if document.retention_until <= today %} <span class="badge overdue">Past</span>{% endif %}{% else %}—{% endif %}
+    </div></div>
+</section>
+
+<section class="card">
+    <h2>Description</h2>
+    <p>{{ document.description or "No description provided." }}</p>
+</section>
+
+<section class="card">
+    <h2>Versions</h2>
+    {% if versions %}
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="num">Ver</th>
+                    <th>File</th>
+                    <th>Status</th>
+                    <th>Author</th>
+                    <th>Reviewer</th>
+                    <th>Approver</th>
+                    <th>Change Summary</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in versions %}
+                <tr>
+                    <td class="num">{{ v.version_number }}</td>
+                    <td><a href="/admin/documents/versions/{{ v.id }}/download">{{ v.filename }}</a>
+                        <span class="muted">({{ v.size_bytes }} bytes)</span></td>
+                    <td><span class="badge doc-{{ v.status }}">{{ v.status.replace('_', ' ') }}</span></td>
+                    <td>{{ user_emails.get(v.author_id, v.author_id) }}</td>
+                    <td>{{ user_emails.get(v.reviewed_by, "—") if v.reviewed_by else "—" }}</td>
+                    <td>{{ user_emails.get(v.approved_by, "—") if v.approved_by else "—" }}</td>
+                    <td>{{ v.change_summary or "—" }}</td>
+                    <td class="doc-actions">
+                        {% if v.status == "Draft" and perms.can_edit and v.author_id == current_user.id %}
+                        <form method="post" action="/admin/documents/versions/{{ v.id }}/submit">
+                            <button class="button-sm button-primary" type="submit">Submit for Review</button>
+                        </form>
+                        {% endif %}
+
+                        {% if v.status == "In_Review" and perms.can_review and v.author_id != current_user.id %}
+                        <form method="post" action="/admin/documents/versions/{{ v.id }}/review">
+                            <button class="button-sm button-primary" type="submit">Sign off Review</button>
+                        </form>
+                        {% endif %}
+
+                        {% if v.status == "Pending_Approval" and perms.can_approve and v.author_id != current_user.id and v.reviewed_by != current_user.id %}
+                        <form method="post" action="/admin/documents/versions/{{ v.id }}/approve">
+                            <button class="button-sm button-primary" type="submit">Approve &amp; Make Effective</button>
+                        </form>
+                        {% endif %}
+
+                        {% if v.status in ["In_Review", "Pending_Approval"] and perms.can_review and v.author_id != current_user.id %}
+                        <form method="post" action="/admin/documents/versions/{{ v.id }}/reject" class="inline-form">
+                            <input type="text" name="reason" placeholder="Reason" required>
+                            <button class="button-sm button-secondary" type="submit">Reject</button>
+                        </form>
+                        {% endif %}
+
+                        {% if v.status == "Effective" and perms.can_obsolete %}
+                        <form method="post" action="/admin/documents/versions/{{ v.id }}/obsolete" class="inline-form">
+                            <input type="text" name="reason" placeholder="Reason" required>
+                            <button class="button-sm button-secondary" type="submit">Obsolete</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="muted">No versions uploaded yet.</p>
+    {% endif %}
+
+    {% if perms.can_edit %}
+    <form method="post" action="/admin/documents/{{ document.id }}/versions" enctype="multipart/form-data" class="inline-form" style="margin-top: 1rem;">
+        <input type="file" name="file" required>
+        <input type="text" name="change_summary" placeholder="Change summary" style="flex: 1;">
+        <button class="button-secondary" type="submit">Upload New Revision</button>
+    </form>
+    <small class="field-hint">A new revision starts as a Draft and must be reviewed and approved before it becomes effective.</small>
+    {% endif %}
+</section>
+
+<section class="card">
+    <h2>Audit History</h2>
+    {% if history %}
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead><tr><th>When</th><th>Entity</th><th>Field</th><th>From</th><th>To</th><th>Reason</th><th>Actor</th></tr></thead>
+            <tbody>
+                {% for h in history %}
+                <tr>
+                    <td>{{ h.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ h.entity_type.replace('_', ' ') }} #{{ h.entity_id }}</td>
+                    <td>{{ h.field }}</td>
+                    <td>{{ h.old_value if h.old_value is not none else "—" }}</td>
+                    <td>{{ h.new_value if h.new_value is not none else "—" }}</td>
+                    <td>{{ h.reason or "" }}</td>
+                    <td>{{ user_emails.get(h.actor_id, h.actor_id if h.actor_id else "system") }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="muted">No history recorded.</p>
+    {% endif %}
+</section>
+{% endblock %}

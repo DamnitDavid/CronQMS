@@ -30,6 +30,13 @@ class Permission(str, Enum):
     CAPA_READ = "capa:read"
     CAPA_UPDATE = "capa:update"
     CAPA_VERIFY = "capa:verify"
+    DOCUMENT_CREATE = "document:create"
+    DOCUMENT_READ = "document:read"
+    DOCUMENT_UPDATE = "document:update"
+    DOCUMENT_REVIEW = "document:review"
+    DOCUMENT_APPROVE = "document:approve"
+    DOCUMENT_OBSOLETE = "document:obsolete"
+    DOCUMENT_DELETE = "document:delete"
     ALERT_CREATE = "alert:create"
     ALERT_READ = "alert:read"
     ALERT_ACKNOWLEDGE = "alert:acknowledge"
@@ -56,6 +63,13 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.CAPA_READ,
         Permission.CAPA_UPDATE,
         Permission.CAPA_VERIFY,
+        Permission.DOCUMENT_CREATE,
+        Permission.DOCUMENT_READ,
+        Permission.DOCUMENT_UPDATE,
+        Permission.DOCUMENT_REVIEW,
+        Permission.DOCUMENT_APPROVE,
+        Permission.DOCUMENT_OBSOLETE,
+        Permission.DOCUMENT_DELETE,
         Permission.ALERT_CREATE,
         Permission.ALERT_READ,
         Permission.ALERT_ACKNOWLEDGE,
@@ -71,6 +85,9 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.CAPA_CREATE,
         Permission.CAPA_READ,
         Permission.CAPA_UPDATE,
+        Permission.DOCUMENT_CREATE,
+        Permission.DOCUMENT_READ,
+        Permission.DOCUMENT_UPDATE,
         Permission.ALERT_CREATE,
         Permission.ALERT_READ,
         Permission.ALERT_ACKNOWLEDGE,
@@ -83,6 +100,10 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.EVENT_COMMENT,
         Permission.CAPA_READ,
         Permission.CAPA_VERIFY,
+        Permission.DOCUMENT_READ,
+        Permission.DOCUMENT_REVIEW,
+        Permission.DOCUMENT_APPROVE,
+        Permission.DOCUMENT_OBSOLETE,
         Permission.ALERT_READ,
         Permission.ALERT_ACKNOWLEDGE,
         Permission.DASHBOARD_VIEW,
@@ -90,6 +111,7 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
     Role.VIEWER: {
         Permission.EVENT_READ,
         Permission.CAPA_READ,
+        Permission.DOCUMENT_READ,
         Permission.ALERT_READ,
         Permission.DASHBOARD_VIEW,
     },
@@ -111,6 +133,13 @@ PERMISSION_LABELS: dict[Permission, str] = {
     Permission.CAPA_READ: "View CAPAs",
     Permission.CAPA_UPDATE: "Edit CAPAs",
     Permission.CAPA_VERIFY: "Verify CAPAs",
+    Permission.DOCUMENT_CREATE: "Create documents",
+    Permission.DOCUMENT_READ: "View documents",
+    Permission.DOCUMENT_UPDATE: "Edit documents & upload revisions",
+    Permission.DOCUMENT_REVIEW: "Review documents",
+    Permission.DOCUMENT_APPROVE: "Approve documents",
+    Permission.DOCUMENT_OBSOLETE: "Obsolete documents",
+    Permission.DOCUMENT_DELETE: "Delete documents",
     Permission.ALERT_CREATE: "Create alerts",
     Permission.ALERT_READ: "View alerts & inbox",
     Permission.ALERT_ACKNOWLEDGE: "Acknowledge alerts",
@@ -123,6 +152,7 @@ PERMISSION_LABELS: dict[Permission, str] = {
 _GROUP_TITLES = {
     "event": "Events",
     "capa": "CAPA",
+    "document": "Documents",
     "alert": "Alerts",
     "user": "Users",
     "settings": "Settings",

@@ -844,6 +844,18 @@ table.data-table tbody tr.overdue td:first-child {
 .badge.capa-Closed { background: var(--ok-soft); color: var(--ok); }
 .badge.capa-Cancelled { background: var(--neutral-soft); color: var(--neutral); }
 
+/* Document version status badges */
+.badge.doc-Draft { background: var(--neutral-soft); color: var(--neutral); }
+.badge.doc-In_Review { background: var(--info-soft); color: var(--info); }
+.badge.doc-Pending_Approval { background: var(--warn-soft); color: var(--warn); }
+.badge.doc-Effective { background: var(--ok-soft); color: var(--ok); }
+.badge.doc-Obsolete { background: var(--neutral-soft); color: var(--neutral); }
+.badge.doc-Rejected { background: var(--danger-soft); color: var(--danger); }
+
+/* Document version action cell — stack multiple action forms */
+.doc-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.doc-actions form { display: inline-flex; gap: 0.3rem; align-items: center; }
+
 /* Boolean custom-field input row */
 .checkbox-row {
     display: flex;

@@ -1,0 +1,44 @@
+<section id="documentTable" class="table-shell">
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Number</th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Owner</th>
+                    <th>Next Review</th>
+                    <th>Retention Until</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if documents %}
+                    {% for doc in documents %}
+                    <tr>
+                        <td><a href="/admin/documents/{{ doc.id }}">{{ doc.document_number }}</a></td>
+                        <td>{{ doc.title }}</td>
+                        <td>{{ doc.category.replace('_', ' ') }}</td>
+                        <td><span class="badge doc-{{ doc.status }}">{{ doc.status.replace('_', ' ') }}</span></td>
+                        <td>{{ owner_emails.get(doc.owner_id, "Unassigned") }}</td>
+                        <td>
+                            {% if doc.next_review_date %}
+                                {{ doc.next_review_date }}
+                                {% if doc.next_review_date <= today %}<span class="badge overdue">Due</span>{% endif %}
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>
+                            {% if doc.retention_until %}
+                                {{ doc.retention_until }}
+                                {% if doc.retention_until <= today %}<span class="badge overdue">Past</span>{% endif %}
+                            {% else %}—{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="7" class="table-empty">No documents recorded yet.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</section>
