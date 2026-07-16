@@ -1,0 +1,42 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Documents{% endblock %}
+{% set active_nav = "documents" %}
+
+{% block admin_content %}
+{% if perms.can_create %}
+<section class="page-actions">
+    <a class="button-primary" href="/admin/documents/create">New Document</a>
+</section>
+{% endif %}
+
+<section class="filter-bar">
+    <form class="filter-form"
+          hx-get="/admin/documents"
+          hx-target="#documentTable"
+          hx-swap="outerHTML"
+          hx-include="this">
+        <label>
+            Category
+            <select name="category">
+                <option value="">All</option>
+                {% for c in categories %}
+                <option value="{{ c }}" {% if filters.category == c %}selected{% endif %}>{{ c.replace('_', ' ') }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            View
+            <select name="review">
+                <option value="">All documents</option>
+                <option value="due" {% if filters.review == "due" %}selected{% endif %}>Due for review</option>
+                <option value="retention" {% if filters.review == "retention" %}selected{% endif %}>Past retention</option>
+            </select>
+        </label>
+        <button type="submit">Filter</button>
+        <a class="button-secondary" href="/admin/documents">Reset</a>
+    </form>
+</section>
+
+{% include "admin/documents/_document_table.html" %}
+{% endblock %}

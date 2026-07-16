@@ -5,6 +5,12 @@ from app.models.role import RoleDefinition, RolePermission
 from app.models.organization import Organization, Site, OrgSetting
 from app.models.event import Event
 from app.models.capa import Capa, CapaStatus, VerificationOutcome, capa_events
+from app.models.document import (
+    Document,
+    DocumentVersion,
+    DocumentCategory,
+    DocumentVersionStatus,
+)
 from app.models.attachment import Attachment
 from app.models.comment import Comment
 from app.models.event_history import EventHistory
@@ -28,6 +34,8 @@ from app.core.audit import register_auditing
 register_auditing(Event)
 register_auditing(Capa)
 register_auditing(Alert)
+register_auditing(Document)
+register_auditing(DocumentVersion)
 
 __all__ = [
     "User",
@@ -42,6 +50,10 @@ __all__ = [
     "CapaStatus",
     "VerificationOutcome",
     "capa_events",
+    "Document",
+    "DocumentVersion",
+    "DocumentCategory",
+    "DocumentVersionStatus",
     "Attachment",
     "Comment",
     "EventHistory",
