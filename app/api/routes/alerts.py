@@ -672,3 +672,49 @@ async def inbox_mark_read(
             f"/admin/alerts/{notification.alert_id}", status_code=status.HTTP_303_SEE_OTHER
         )
     return RedirectResponse("/admin/inbox", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# --- notification bell (shellbar dropdown) ---------------------------------
+def _render_notifications_menu(request: Request, current_user: User, db: Session):
+    """Render the shellbar bell dropdown: unread count + a few recent items."""
+    recent = (
+        db.query(Notification)
+        .filter(Notification.user_id == current_user.id)
+        .order_by(Notification.created_at.desc())
+        .limit(6)
+        .all()
+    )
+    return templates.TemplateResponse(
+        "admin/alerts/_notifications_menu.html",
+        {
+            "request": request,
+            "current_user": current_user,
+            "notifications": recent,
+            "unread_count": _unread_count(db, current_user.id),
+        },
+    )
+
+
+@router.get("/admin/notifications/menu")
+async def notifications_menu(
+    request: Request,
+    current_user: User = Depends(require_permission(Permission.ALERT_READ)),
+    db: Session = Depends(get_db),
+):
+    """HTMX fragment loaded into the shellbar bell dropdown."""
+    return _render_notifications_menu(request, current_user, db)
+
+
+@router.post("/admin/notifications/clear")
+async def notifications_clear(
+    request: Request,
+    current_user: User = Depends(require_permission(Permission.ALERT_READ)),
+    db: Session = Depends(get_db),
+):
+    """Mark all of the current user's notifications read, return the fresh menu."""
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read.is_(False),
+    ).update({Notification.is_read: True})
+    db.commit()
+    return _render_notifications_menu(request, current_user, db)

@@ -1247,3 +1247,127 @@ code {
     max-height: 60vh;
     cursor: crosshair;
 }
+
+/* --- Notification bell (shellbar dropdown) ------------------------------- */
+.notif-bell {
+    position: relative;
+    display: inline-flex;
+}
+
+.notif-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: var(--radius-pill);
+    background: var(--danger);
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+}
+
+.notif-panel {
+    position: absolute;
+    top: 46px;
+    right: 0;
+    width: 340px;
+    max-width: 90vw;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    z-index: 60;
+    overflow: hidden;
+}
+
+.notif-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.notif-list {
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+.notif-item {
+    display: block;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    text-decoration: none;
+}
+
+.notif-item:hover {
+    background: var(--surface-2);
+}
+
+.notif-item.unread {
+    border-left: 3px solid var(--primary);
+}
+
+.notif-subject {
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.notif-body {
+    font-size: 0.82rem;
+    margin-top: 0.15rem;
+}
+
+.notif-time {
+    font-size: 0.75rem;
+    margin-top: 0.2rem;
+}
+
+.notif-foot {
+    display: block;
+    padding: 0.6rem 0.75rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--primary);
+    text-decoration: none;
+    border-top: 1px solid var(--border);
+}
+
+.notif-foot:hover {
+    background: var(--surface-2);
+}
+
+/* --- Modal overlay (idle auto-logout warning) --------------------------- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 27, 45, 0.45);
+    z-index: 1000;
+    padding: 1rem;
+}
+
+.modal-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    padding: 1.25rem 1.5rem;
+    max-width: 400px;
+    width: 100%;
+}
+
+.modal-card h2 {
+    margin: 0 0 0.5rem;
+}
+
+[hidden] {
+    display: none !important;
+}

@@ -1,0 +1,27 @@
+{# Shellbar bell dropdown contents. Loaded into #notifMenu via HTMX; the badge
+   updates the bell out-of-band so it shows while the panel is closed. #}
+<span id="notifBadge" class="notif-badge" hx-swap-oob="true"
+      {% if not unread_count %}hidden{% endif %}>{{ unread_count }}</span>
+
+<div class="notif-head">
+    <strong>Notifications</strong>
+    <form hx-post="/admin/notifications/clear" hx-target="#notifMenu" hx-swap="innerHTML">
+        <button class="button-secondary button-sm" type="submit"
+                {% if not unread_count %}disabled{% endif %}>Clear</button>
+    </form>
+</div>
+
+<div class="notif-list">
+    {% for n in notifications %}
+    <a class="notif-item {% if not n.is_read %}unread{% endif %}"
+       href="{{ ('/admin/alerts/' ~ n.alert_id) if n.alert_id else '/admin/inbox' }}">
+        <div class="notif-subject">{{ n.subject }}</div>
+        {% if n.body %}<div class="notif-body muted">{{ n.body|truncate(90) }}</div>{% endif %}
+        <div class="notif-time muted">{{ n.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+    </a>
+    {% else %}
+    <p class="muted" style="padding: 0.75rem;">You have no notifications.</p>
+    {% endfor %}
+</div>
+
+<a class="notif-foot" href="/admin/inbox">See past notifications</a>
