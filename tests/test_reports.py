@@ -67,16 +67,16 @@ class ReportsTest(unittest.TestCase):
 
             # Events across months; one closed, some overdue with an assignee.
             db.add_all([
-                Event(title="jan1", event_type="Non_Conformance", status="Open",
+                Event(title="jan1", event_type="Defect", status="Open",
                       priority="High", organization_id=cls.org_id, reported_by=cls.qm_id,
                       created_at=datetime(2026, 1, 5)),
-                Event(title="jan2", event_type="Non_Conformance", status="Closed",
+                Event(title="jan2", event_type="Defect", status="Closed",
                       priority="High", organization_id=cls.org_id, reported_by=cls.qm_id,
                       created_at=datetime(2026, 1, 20), closed_at=datetime(2026, 2, 2)),
-                Event(title="overdue1", event_type="Non_Conformance", status="Open",
+                Event(title="overdue1", event_type="Defect", status="Open",
                       priority="High", organization_id=cls.org_id, reported_by=cls.qm_id,
                       assigned_to=cls.assignee_id, target_close_date=date.today() - timedelta(days=2)),
-                Event(title="overdue2", event_type="Non_Conformance", status="In_Progress",
+                Event(title="overdue2", event_type="Defect", status="In_Progress",
                       priority="High", organization_id=cls.org_id, reported_by=cls.qm_id,
                       assigned_to=cls.assignee_id, target_close_date=date.today() - timedelta(days=1)),
             ])

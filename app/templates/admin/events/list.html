@@ -48,7 +48,7 @@
                     hx-include="this">
                 <option value="">All</option>
                 {% for t in event_types %}
-                <option value="{{ t }}" {% if filters.event_type == t %}selected{% endif %}>{{ t }}</option>
+                <option value="{{ t }}" {% if filters.event_type == t %}selected{% endif %}>{{ event_type_label(t) }}</option>
                 {% endfor %}
             </select>
         </label>

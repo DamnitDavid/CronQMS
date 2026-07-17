@@ -61,6 +61,7 @@ class Permission(str, Enum):
     USER_MANAGE = "user:manage"
     SETTINGS_MANAGE = "settings:manage"
     DASHBOARD_VIEW = "dashboard:view"
+    AUDIT_LOG_VIEW = "audit_log:view"
 
 
 # Permission grants per role. Admin is granted everything explicitly so adding a
@@ -109,6 +110,7 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.CHANGE_APPROVE,
         Permission.CHANGE_DELETE,
         Permission.DASHBOARD_VIEW,
+        Permission.AUDIT_LOG_VIEW,
     },
     Role.INVESTIGATOR: {
         Permission.EVENT_CREATE,
@@ -138,6 +140,7 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.CHANGE_UPDATE,
         Permission.CHANGE_ASSESS,
         Permission.DASHBOARD_VIEW,
+        Permission.AUDIT_LOG_VIEW,
     },
     Role.APPROVER: {
         Permission.EVENT_READ,
@@ -159,6 +162,7 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.CHANGE_READ,
         Permission.CHANGE_APPROVE,
         Permission.DASHBOARD_VIEW,
+        Permission.AUDIT_LOG_VIEW,
     },
     Role.VIEWER: {
         Permission.EVENT_READ,
@@ -169,6 +173,7 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.TRAINING_READ,
         Permission.CHANGE_READ,
         Permission.DASHBOARD_VIEW,
+        Permission.AUDIT_LOG_VIEW,
     },
 }
 
@@ -218,7 +223,8 @@ PERMISSION_LABELS: dict[Permission, str] = {
     Permission.CHANGE_DELETE: "Delete change requests",
     Permission.USER_MANAGE: "Manage users",
     Permission.SETTINGS_MANAGE: "Manage settings & roles",
-    Permission.DASHBOARD_VIEW: "View dashboard & reports",
+    Permission.DASHBOARD_VIEW: "View reports",
+    Permission.AUDIT_LOG_VIEW: "View the cross-module audit log",
 }
 
 _GROUP_TITLES = {
@@ -232,6 +238,7 @@ _GROUP_TITLES = {
     "user": "Users",
     "settings": "Settings",
     "dashboard": "Dashboard",
+    "audit_log": "Audit Log",
 }
 
 

@@ -15,7 +15,7 @@
                 hx-include="this"
                 hx-vals='{"event_id": "{{ event.id }}"}'>
             {% for t in event_types %}
-            <option value="{{ t }}" {% if event.event_type == t %}selected{% endif %}>{{ t }}</option>
+            <option value="{{ t }}" {% if event.event_type == t %}selected{% endif %}>{{ event_type_label(t) }}</option>
             {% endfor %}
         </select>
         <small>The form adapts to the selected type.</small>

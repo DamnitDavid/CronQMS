@@ -89,6 +89,12 @@ async def get_current_user(email: str = Depends(get_current_user_email), db: Ses
     from app.core.permissions import granted_permissions
 
     user.granted_permissions = {p.value for p in granted_permissions(db, user)}
+
+    # Build the org-configurable sidebar for this user, gated by the grants just
+    # resolved. Same per-request, attach-to-instance pattern as above.
+    from app.services import nav_config
+
+    user.nav = nav_config.visible_nav(db, user)
     return user
 
 async def get_current_user_optional(

@@ -59,11 +59,11 @@ class AttachmentsTest(unittest.TestCase):
             make_user("other", Role.INVESTIGATOR, cls.other_org_id)
 
             event = Event(
-                title="With attachments", event_type="Non_Conformance", status="Open",
+                title="With attachments", event_type="Defect", status="Open",
                 priority="High", organization_id=cls.org_id, reported_by=cls.ids["investigator"],
             )
             other_event = Event(
-                title="Other org", event_type="Non_Conformance", status="Open",
+                title="Other org", event_type="Defect", status="Open",
                 priority="High", organization_id=cls.other_org_id, reported_by=cls.ids["other"],
             )
             db.add_all([event, other_event])

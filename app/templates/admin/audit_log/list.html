@@ -1,0 +1,48 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Audit Log{% endblock %}
+{% set active_nav = "audit-log" %}
+
+{% block admin_content %}
+<p class="section-hint">A read-only, cross-module record of every change made across
+Events, CAPA, Documents, Audits, Change Control, and more — for external auditing.</p>
+
+<section class="filter-bar">
+    <form class="filter-form"
+          hx-get="/admin/audit-log"
+          hx-target="#auditLogTable"
+          hx-swap="outerHTML"
+          hx-include="this">
+        <label>
+            Type
+            <select name="entity_type">
+                <option value="">All types</option>
+                {% for t in entity_types %}
+                <option value="{{ t }}" {% if filters.entity_type == t %}selected{% endif %}>{{ entity_label(t) }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            Actor
+            <select name="actor_id">
+                <option value="">All users</option>
+                {% for u in actors %}
+                <option value="{{ u.id }}" {% if filters.actor_id == u.id|string %}selected{% endif %}>{{ u.email }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            From
+            <input type="date" name="date_from" value="{{ filters.date_from }}">
+        </label>
+        <label>
+            To
+            <input type="date" name="date_to" value="{{ filters.date_to }}">
+        </label>
+        <button type="submit">Filter</button>
+        <a class="button-secondary" href="/admin/audit-log">Reset</a>
+    </form>
+</section>
+
+{% include "admin/audit_log/_audit_log_table.html" %}
+{% endblock %}

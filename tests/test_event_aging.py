@@ -61,7 +61,7 @@ class EventAgingTest(unittest.TestCase):
     def test_target_close_date_derived_from_priority_sla(self):
         resp = self.client.post(
             "/api/events/",
-            json={"title": "Critical failure", "priority": "Critical", "event_type": "Non_Conformance"},
+            json={"title": "Critical failure", "priority": "Critical", "event_type": "Defect"},
             headers=self._auth(),
         )
         self.assertEqual(resp.status_code, 201, resp.text)
@@ -104,7 +104,7 @@ class EventAgingTest(unittest.TestCase):
         try:
             event = Event(
                 title="Overdue item",
-                event_type="Non_Conformance",
+                event_type="Defect",
                 status="Open",
                 priority="High",
                 organization_id=self.org_id,
@@ -131,7 +131,7 @@ class EventAgingTest(unittest.TestCase):
         try:
             event = Event(
                 title="Closed overdue",
-                event_type="Non_Conformance",
+                event_type="Defect",
                 status="Closed",
                 priority="High",
                 organization_id=self.org_id,

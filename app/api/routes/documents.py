@@ -43,6 +43,7 @@ _SCALAR_FIELDS = {
     "title",
     "description",
     "owner_id",
+    "owner_group_id",
     "review_period_months",
     "retention_period_months",
 }
@@ -110,6 +111,7 @@ async def create_document(
         category=payload.category.value,
         description=payload.description,
         owner_id=payload.owner_id,
+        owner_group_id=payload.owner_group_id,
         review_period_months=payload.review_period_months,
         retention_period_months=payload.retention_period_months,
         created_by=current_user.id,

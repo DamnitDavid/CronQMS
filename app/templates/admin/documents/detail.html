@@ -26,6 +26,7 @@
 
 <section class="detail-grid">
     <div class="field"><div class="label">Owner</div><div class="value">{{ user_emails.get(document.owner_id, "Unassigned") }}</div></div>
+    <div class="field"><div class="label">Owner Group</div><div class="value">{{ document.owner_group.name if document.owner_group else "—" }}</div></div>
     <div class="field"><div class="label">Category</div><div class="value">{{ document.category.replace('_', ' ') }}</div></div>
     <div class="field"><div class="label">Effective Version</div><div class="value">
         {% if current_version %}v{{ current_version.version_number }} ({{ current_version.effective_date }}){% else %}None{% endif %}

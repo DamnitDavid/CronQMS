@@ -76,7 +76,7 @@ class AuditTrailTest(unittest.TestCase):
         try:
             event = Event(
                 title="Cracked housing",
-                event_type="Non_Conformance",
+                event_type="Defect",
                 status="Open",
                 priority="High",
                 organization_id=self.org_id,
@@ -102,7 +102,7 @@ class AuditTrailTest(unittest.TestCase):
         try:
             event = Event(
                 title="Loose fastener",
-                event_type="Non_Conformance",
+                event_type="Defect",
                 status="Open",
                 priority="Medium",
                 organization_id=self.org_id,
@@ -135,7 +135,7 @@ class AuditTrailTest(unittest.TestCase):
         try:
             event = Event(
                 title="Scrap batch",
-                event_type="Non_Conformance",
+                event_type="Defect",
                 status="Open",
                 priority="Low",
                 organization_id=self.org_id,
@@ -159,7 +159,7 @@ class AuditTrailTest(unittest.TestCase):
         # The authenticated request path must attribute the change to the user.
         resp = self.client.post(
             "/api/events/",
-            json={"title": "API reported event", "priority": "Medium", "event_type": "Non_Conformance"},
+            json={"title": "API reported event", "priority": "Medium", "event_type": "Defect"},
             headers={"Authorization": f"Bearer {self.token}"},
         )
         self.assertEqual(resp.status_code, 201)
@@ -178,7 +178,7 @@ class AuditTrailTest(unittest.TestCase):
         try:
             event = Event(
                 title="Immutable check",
-                event_type="Non_Conformance",
+                event_type="Defect",
                 status="Open",
                 priority="Medium",
                 organization_id=self.org_id,
@@ -204,7 +204,7 @@ class AuditTrailTest(unittest.TestCase):
         try:
             event = Event(
                 title="Immutable delete check",
-                event_type="Non_Conformance",
+                event_type="Defect",
                 status="Open",
                 priority="Medium",
                 organization_id=self.org_id,

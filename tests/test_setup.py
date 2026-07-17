@@ -70,7 +70,7 @@ class FirstTimeSetupTest(unittest.TestCase):
     def test_setup_creates_org_and_admin_and_logs_in(self):
         response = self._complete_setup()
         self.assertEqual(response.status_code, 204)
-        self.assertEqual(response.headers.get("HX-Redirect"), "/admin/dashboard")
+        self.assertEqual(response.headers.get("HX-Redirect"), "/admin/events")
         self.assertIn("access_token", self.client.cookies)
 
         db = SessionLocal()
@@ -84,10 +84,10 @@ class FirstTimeSetupTest(unittest.TestCase):
         finally:
             db.close()
 
-        # The session cookie set above should now load the dashboard.
-        dashboard = self.client.get("/admin/dashboard")
-        self.assertEqual(dashboard.status_code, 200)
-        self.assertIn("dashboard", dashboard.text.lower())
+        # The session cookie set above should now load the landing page.
+        landing = self.client.get("/admin/events")
+        self.assertEqual(landing.status_code, 200)
+        self.assertIn("events", landing.text.lower())
 
     def test_setup_is_inert_once_completed(self):
         self.assertEqual(self._complete_setup().status_code, 204)

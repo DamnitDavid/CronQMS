@@ -57,11 +57,11 @@ class CapaTest(unittest.TestCase):
             make_user("other_admin", Role.ADMIN, cls.other_org_id)
 
             event = Event(
-                title="Linked NC", event_type="Non_Conformance", status="Open",
+                title="Linked NC", event_type="Defect", status="Open",
                 priority="High", organization_id=cls.org_id, reported_by=cls.ids["qm"],
             )
             other_event = Event(
-                title="Other org NC", event_type="Non_Conformance", status="Open",
+                title="Other org NC", event_type="Defect", status="Open",
                 priority="High", organization_id=cls.other_org_id, reported_by=cls.ids["other_admin"],
             )
             db.add_all([event, other_event])

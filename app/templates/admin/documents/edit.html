@@ -42,6 +42,15 @@
             </select>
         </div>
         <div class="form-group">
+            <label for="owner_group_id">Owner Group</label>
+            <select id="owner_group_id" name="owner_group_id">
+                <option value="">None</option>
+                {% for g in groups %}
+                <option value="{{ g.id }}" {% if document.owner_group_id == g.id %}selected{% endif %}>{{ g.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
             <label for="review_period_months">Review Period (months)</label>
             <input type="number" id="review_period_months" name="review_period_months" min="1" max="120" value="{{ document.review_period_months or '' }}">
         </div>

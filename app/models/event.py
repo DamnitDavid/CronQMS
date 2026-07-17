@@ -23,10 +23,24 @@ class EventPriority(str, Enum):
 
 
 class EventType(str, Enum):
-    NON_CONFORMANCE = "Non_Conformance"
+    DEFECT = "Defect"
     CAPA = "CAPA"
-    AUDIT_FINDING = "Audit_Finding"
     OTHER = "Other"
+
+
+# User-facing labels for event types. The stored value is rendered verbatim
+# elsewhere, so this map keeps display text (e.g. the plural "Defects") separate
+# from the persisted enum value and avoids showing raw underscored values.
+EVENT_TYPE_LABELS: dict[str, str] = {
+    EventType.DEFECT.value: "Defects",
+    EventType.CAPA.value: "CAPA",
+    EventType.OTHER.value: "Other",
+}
+
+
+def event_type_label(value: str) -> str:
+    """Friendly label for a stored ``event_type`` value (falls back to itself)."""
+    return EVENT_TYPE_LABELS.get(value, value)
 
 
 class Event(Base):
@@ -60,7 +74,7 @@ class Event(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
-    event_type = Column(String(50), nullable=False, default=EventType.NON_CONFORMANCE.value)
+    event_type = Column(String(50), nullable=False, default=EventType.DEFECT.value)
     status = Column(String(30), nullable=False, default=EventStatus.OPEN.value)
     priority = Column(String(20), nullable=False, default=EventPriority.MEDIUM.value)
     assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True)

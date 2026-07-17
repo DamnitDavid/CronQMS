@@ -16,7 +16,7 @@
                 hx-trigger="change"
                 hx-include="this">
             {% for t in event_types %}
-            <option value="{{ t }}" {% if t == selected_type %}selected{% endif %}>{{ t }}</option>
+            <option value="{{ t }}" {% if t == selected_type %}selected{% endif %}>{{ event_type_label(t) }}</option>
             {% endfor %}
         </select>
         <small>The form adapts to the selected type.</small>

@@ -31,7 +31,7 @@ from app.config import get_settings
 from app.core.permissions import Permission, require_permission
 from app.core.storage import get_storage
 from app.database import get_db
-from app.models import Document, DocumentVersion, EventHistory, User
+from app.models import AssigneeGroup, Document, DocumentVersion, EventHistory, User
 from app.models.document import DocumentCategory, DocumentVersionStatus
 from app.services import document_workflow
 from app.services.document_workflow import WorkflowError
@@ -87,6 +87,19 @@ def _org_user_emails(db: Session, organization_id: int) -> dict[int, str]:
     return {u.id: u.email for u in users}
 
 
+def _org_groups(db: Session, organization_id: int):
+    """Active assignee groups for an organization (owner-group dropdown/filter)."""
+    return (
+        db.query(AssigneeGroup)
+        .filter(
+            AssigneeGroup.organization_id == organization_id,
+            AssigneeGroup.is_active.is_(True),
+        )
+        .order_by(AssigneeGroup.name.asc())
+        .all()
+    )
+
+
 def _to_int(value: Optional[str]) -> Optional[int]:
     return int(value) if value not in (None, "") else None
 
@@ -106,6 +119,7 @@ async def documents_page(
     db: Session = Depends(get_db),
     category: Optional[str] = None,
     review: Optional[str] = None,
+    owner_group: Optional[str] = None,
 ):
     query = db.query(Document).filter(
         Document.organization_id == current_user.organization_id,
@@ -123,16 +137,24 @@ async def documents_page(
             Document.retention_until.isnot(None),
             Document.retention_until <= date.today(),
         )
+    owner_group_id = _to_int(owner_group)
+    if owner_group_id is not None:
+        query = query.filter(Document.owner_group_id == owner_group_id)
     documents = query.order_by(Document.updated_at.desc()).limit(200).all()
     context = {
         "request": request,
         "current_user": current_user,
         "documents": documents,
         "owner_emails": _org_user_emails(db, current_user.organization_id),
+        "groups": _org_groups(db, current_user.organization_id),
         "categories": CATEGORY_VALUES,
         "today": date.today(),
         "perms": _permission_flags(current_user),
-        "filters": {"category": category or "", "review": review or ""},
+        "filters": {
+            "category": category or "",
+            "review": review or "",
+            "owner_group": owner_group or "",
+        },
     }
     template = (
         "admin/documents/_document_table.html"
@@ -157,6 +179,7 @@ async def document_create_page(
             "request": request,
             "current_user": current_user,
             "users": users,
+            "groups": _org_groups(db, current_user.organization_id),
             "categories": CATEGORY_VALUES,
             "error": error,
         },
@@ -173,6 +196,7 @@ async def document_create_submit(
     category: str = Form(DocumentCategory.SOP.value),
     description: str = Form(""),
     owner_id: Optional[str] = Form(None),
+    owner_group_id: Optional[str] = Form(None),
     review_period_months: Optional[str] = Form(None),
     retention_period_months: Optional[str] = Form(None),
 ):
@@ -185,6 +209,7 @@ async def document_create_submit(
         category=category,
         description=description or None,
         owner_id=_to_int(owner_id),
+        owner_group_id=_to_int(owner_group_id),
         review_period_months=_to_int(review_period_months),
         retention_period_months=_to_int(retention_period_months),
         created_by=current_user.id,
@@ -213,6 +238,7 @@ async def document_edit_page(
             "current_user": current_user,
             "document": document,
             "users": users,
+            "groups": _org_groups(db, current_user.organization_id),
             "categories": CATEGORY_VALUES,
             "error": error,
         },
@@ -229,6 +255,7 @@ async def document_edit_submit(
     category: str = Form(DocumentCategory.SOP.value),
     description: str = Form(""),
     owner_id: Optional[str] = Form(None),
+    owner_group_id: Optional[str] = Form(None),
     review_period_months: Optional[str] = Form(None),
     retention_period_months: Optional[str] = Form(None),
 ):
@@ -238,6 +265,7 @@ async def document_edit_submit(
     document.category = category if category in CATEGORY_VALUES else document.category
     document.description = description or None
     document.owner_id = _to_int(owner_id)
+    document.owner_group_id = _to_int(owner_group_id)
     document.review_period_months = _to_int(review_period_months)
     document.retention_period_months = _to_int(retention_period_months)
     db.add(document)
