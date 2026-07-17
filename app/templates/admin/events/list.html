@@ -15,7 +15,8 @@
           hx-get="/admin/events"
           hx-target="#eventTable"
           hx-swap="outerHTML"
-          hx-include="this">
+          hx-include="this"
+          hx-indicator="#eventsPane">
         <label>
             Search
             <input type="search" name="search" placeholder="Search events..." value="{{ filters.search }}">
@@ -62,5 +63,14 @@
     </form>
 </section>
 
-{% include "admin/events/_event_table.html" %}
+<div id="eventsPane" class="events-pane">
+    <div class="sk-tablewrap" aria-hidden="true">
+        <div class="sk-row sk-row-head"><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>
+        <div class="sk-row"><div class="sk"></div><div class="sk" style="width:80%"></div><div class="sk sk-pill"></div><div class="sk sk-pill"></div><div class="sk" style="width:70%"></div></div>
+        <div class="sk-row"><div class="sk"></div><div class="sk" style="width:65%"></div><div class="sk sk-pill"></div><div class="sk sk-pill"></div><div class="sk" style="width:70%"></div></div>
+        <div class="sk-row"><div class="sk"></div><div class="sk" style="width:88%"></div><div class="sk sk-pill"></div><div class="sk sk-pill"></div><div class="sk" style="width:70%"></div></div>
+        <div class="sk-row"><div class="sk"></div><div class="sk" style="width:72%"></div><div class="sk sk-pill"></div><div class="sk sk-pill"></div><div class="sk" style="width:70%"></div></div>
+    </div>
+    {% include "admin/events/_event_table.html" %}
+</div>
 {% endblock %}

@@ -1,4 +1,5 @@
 <section id="eventTable" class="table-shell">
+    {% if events %}
     <div class="table-scroll">
         <table class="data-table">
             <thead>
@@ -13,27 +14,34 @@
                 </tr>
             </thead>
             <tbody>
-                {% if events %}
-                    {% for event in events %}
-                    <tr class="{{ 'overdue' if event.is_overdue }}">
-                        <td class="num">{{ event.id }}</td>
-                        <td><a href="/admin/events/{{ event.id }}">{{ event.title }}</a></td>
-                        <td>
-                            <span class="badge status-{{ event.status }}">{{ event.status }}</span>
-                            {% if event.is_overdue %}<span class="badge overdue">Overdue</span>{% endif %}
-                        </td>
-                        <td><span class="badge prio-{{ event.priority }}">{{ event.priority }}</span></td>
-                        <td>{{ assignee_labels.get(event.id, "Unassigned") }}</td>
-                        <td>{{ event.target_close_date or "—" }}</td>
-                        <td>{{ event.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="7" class="table-empty">No events match these filters.</td>
-                    </tr>
-                {% endif %}
+                {% for event in events %}
+                <tr class="{{ 'overdue' if event.is_overdue }}">
+                    <td class="num">{{ event.id }}</td>
+                    <td><a href="/admin/events/{{ event.id }}">{{ event.title }}</a></td>
+                    <td>
+                        <span class="badge status-{{ event.status }}">{{ event.status }}</span>
+                        {% if event.is_overdue %}<span class="badge overdue">Overdue</span>{% endif %}
+                    </td>
+                    <td><span class="badge prio-{{ event.priority }}">{{ event.priority }}</span></td>
+                    <td>{{ assignee_labels.get(event.id, "Unassigned") }}</td>
+                    <td>{{ event.target_close_date or "—" }}</td>
+                    <td>{{ event.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
+    {% else %}
+    <div class="table-empty-state">
+        <div class="table-empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        </div>
+        <h3>No events match these filters</h3>
+        <p>Nothing here for the current status and priority. Adjust the filters, or log the first event for this workspace.</p>
+        <div class="table-empty-actions">
+            {% if can_create %}<a class="button-primary" href="/admin/events/create">New Event</a>{% endif %}
+            <a class="button-secondary" href="/admin/events">Clear filters</a>
+        </div>
+    </div>
+    {% endif %}
 </section>
