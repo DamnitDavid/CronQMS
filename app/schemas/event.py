@@ -35,7 +35,7 @@ class EventCreate(TraceabilityFields):
 
     title: str = Field(..., min_length=3, max_length=255)
     description: Optional[str] = Field(default=None, max_length=5000)
-    event_type: EventType = EventType.NON_CONFORMANCE
+    event_type: EventType = EventType.DEFECT
     priority: EventPriority = EventPriority.MEDIUM
     assigned_to: Optional[int] = None
     site_id: Optional[int] = None

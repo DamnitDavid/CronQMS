@@ -1,0 +1,39 @@
+<section id="auditLogTable" class="table-shell">
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>When</th>
+                    <th>Actor</th>
+                    <th>Type</th>
+                    <th>Record</th>
+                    <th>Field</th>
+                    <th>Old</th>
+                    <th>New</th>
+                    <th>Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if entries %}
+                    {% for e in entries %}
+                    <tr>
+                        <td>{{ e.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ actor_emails.get(e.actor_id, "—") }}</td>
+                        <td>{{ entity_label(e.entity_type) }}</td>
+                        <td>
+                            {% set link = entity_link(e.entity_type, e.entity_id) %}
+                            {% if link %}<a href="{{ link }}">#{{ e.entity_id }}</a>{% else %}#{{ e.entity_id }}{% endif %}
+                        </td>
+                        <td>{{ e.field }}</td>
+                        <td class="muted">{{ e.old_value if e.old_value is not none else "—" }}</td>
+                        <td>{{ e.new_value if e.new_value is not none else "—" }}</td>
+                        <td class="muted">{{ e.reason if e.reason else "—" }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="8" class="table-empty">No audit-log entries match.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</section>

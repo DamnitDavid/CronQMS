@@ -1,0 +1,72 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Settings — Navigation{% endblock %}
+{% set active_nav = "settings" %}
+{% set settings_tab = "navigation" %}
+
+{% block admin_content %}
+{% include "admin/settings/_tabs.html" %}
+
+{% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
+{% if saved %}<div class="alert alert-success">Navigation saved.</div>{% endif %}
+
+<p class="section-hint">Organize the sidebar for your organization. Name the groups,
+then place each module into a group (or hide it) and set its order. A module still
+only appears for users whose Role has privilege for it.</p>
+
+<form method="post" action="/admin/settings/navigation">
+    <section class="card" style="max-width: 760px;">
+        <h2>Groups</h2>
+        <p><small>Name up to {{ group_slots|length }} groups. Leave a name blank to drop that group.</small></p>
+        <div class="form-grid">
+            {% for i in group_slots %}
+            <div class="form-group">
+                <label for="group_title__{{ i }}">Group {{ i + 1 }}</label>
+                <input type="text" id="group_title__{{ i }}" name="group_title__{{ i }}"
+                       value="{{ group_titles[i] }}" maxlength="60" placeholder="(unused)">
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="card" style="max-width: 760px; margin-top: 1rem;">
+        <h2>Modules</h2>
+        <div class="table-scroll">
+            <table class="data-table">
+                <thead>
+                    <tr><th>Module</th><th>Group</th><th>Order</th></tr>
+                </thead>
+                <tbody>
+                    {% for row in module_rows %}
+                    <tr>
+                        <td>{{ row.label }}</td>
+                        <td>
+                            <select name="group__{{ row.key }}">
+                                <option value="" {% if row.group_index is none %}selected{% endif %}>Hidden</option>
+                                {% for i in group_slots %}
+                                <option value="{{ i }}" {% if row.group_index == i %}selected{% endif %}>
+                                    {{ group_titles[i] if group_titles[i] else "Group " ~ (i + 1) }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="number" name="order__{{ row.key }}" value="{{ row.order }}"
+                                   min="0" step="1" style="max-width: 90px;">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top: 1rem;">
+            <button class="button-primary" type="submit">Save navigation</button>
+        </div>
+    </section>
+</form>
+
+<form method="post" action="/admin/settings/navigation" style="margin-top: 0.75rem;">
+    <input type="hidden" name="reset" value="1">
+    <button class="button-secondary" type="submit">Reset to default</button>
+</form>
+{% endblock %}

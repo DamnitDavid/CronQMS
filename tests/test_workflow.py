@@ -69,7 +69,7 @@ class WorkflowTest(unittest.TestCase):
         try:
             event = Event(
                 title="Workflow event",
-                event_type="Non_Conformance",
+                event_type="Defect",
                 status=status,
                 priority="High",
                 organization_id=self.org_id,

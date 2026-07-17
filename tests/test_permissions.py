@@ -103,7 +103,7 @@ class PermissionMatrixTest(unittest.TestCase):
         try:
             event = Event(
                 title="Seed nonconformance",
-                event_type="Non_Conformance",
+                event_type="Defect",
                 status="Open",
                 priority="Medium",
                 organization_id=organization_id or self.org_id,
@@ -138,7 +138,7 @@ class PermissionMatrixTest(unittest.TestCase):
 
     # --- event endpoints ---------------------------------------------------
     def test_event_create(self):
-        payload = {"title": "New event", "priority": "Medium", "event_type": "Non_Conformance"}
+        payload = {"title": "New event", "priority": "Medium", "event_type": "Defect"}
         self._assert_allowed_denied(
             "event_create",
             lambda role: self.client.post("/api/events/", json=payload, headers=self._auth(role)),

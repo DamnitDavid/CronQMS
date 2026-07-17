@@ -8,6 +8,7 @@
                     <th>Category</th>
                     <th>Status</th>
                     <th>Owner</th>
+                    <th>Owner Group</th>
                     <th>Next Review</th>
                     <th>Retention Until</th>
                 </tr>
@@ -21,6 +22,7 @@
                         <td>{{ doc.category.replace('_', ' ') }}</td>
                         <td><span class="badge doc-{{ doc.status }}">{{ doc.status.replace('_', ' ') }}</span></td>
                         <td>{{ owner_emails.get(doc.owner_id, "Unassigned") }}</td>
+                        <td>{{ doc.owner_group.name if doc.owner_group else "—" }}</td>
                         <td>
                             {% if doc.next_review_date %}
                                 {{ doc.next_review_date }}
@@ -36,7 +38,7 @@
                     </tr>
                     {% endfor %}
                 {% else %}
-                    <tr><td colspan="7" class="table-empty">No documents recorded yet.</td></tr>
+                    <tr><td colspan="8" class="table-empty">No documents recorded yet.</td></tr>
                 {% endif %}
             </tbody>
         </table>

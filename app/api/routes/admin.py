@@ -1,7 +1,10 @@
-"""Admin and dashboard routes for Proins."""
+"""Admin stats endpoints for Proins.
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.templating import Jinja2Templates
+The dashboard page was removed; these JSON endpoints remain as the machine
+interface for organization-scoped event statistics and recent activity.
+"""
+
+from fastapi import APIRouter, Depends
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -12,10 +15,6 @@ from app.models import Event, User
 from app.core.permissions import Permission, require_permission
 
 router = APIRouter(tags=["Admin"])
-
-import os
-
-templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "..", "..", "templates"))
 
 
 def _dashboard_stats(db: Session, organization_id: int | None) -> dict:
@@ -43,34 +42,6 @@ def _dashboard_stats(db: Session, organization_id: int | None) -> dict:
     }
 
 
-@router.get("/admin/dashboard")
-async def admin_dashboard(
-    request: Request,
-    current_user: User = Depends(require_permission(Permission.DASHBOARD_VIEW)),
-    db: Session = Depends(get_db),
-):
-    """Render the admin dashboard for the caller's organization."""
-    stats = _dashboard_stats(db, current_user.organization_id)
-
-    recent_events = (
-        db.query(Event)
-        .filter(Event.organization_id == current_user.organization_id, Event.is_active.is_(True))
-        .order_by(Event.updated_at.desc())
-        .limit(10)
-        .all()
-    )
-
-    return templates.TemplateResponse(
-        "admin/dashboard.html",
-        {
-            "request": request,
-            "current_user": current_user,
-            "stats": stats,
-            "recent_events": recent_events,
-        },
-    )
-
-
 @router.get("/api/stats")
 async def api_stats(
     current_user: User = Depends(require_permission(Permission.DASHBOARD_VIEW)),
@@ -78,26 +49,6 @@ async def api_stats(
 ) -> dict:
     """Return dashboard statistics for the caller's organization."""
     return _dashboard_stats(db, current_user.organization_id)
-
-
-@router.get("/admin/fragments/recent-activity")
-async def recent_activity_fragment(
-    request: Request,
-    current_user: User = Depends(require_permission(Permission.DASHBOARD_VIEW)),
-    db: Session = Depends(get_db),
-):
-    """Render the recent-activity feed as an HTML fragment for htmx swaps."""
-    recent_events = (
-        db.query(Event)
-        .filter(Event.organization_id == current_user.organization_id, Event.is_active.is_(True))
-        .order_by(Event.updated_at.desc())
-        .limit(10)
-        .all()
-    )
-    return templates.TemplateResponse(
-        "admin/_activity_feed.html",
-        {"request": request, "recent_events": recent_events},
-    )
 
 
 @router.get("/api/recent-activity")

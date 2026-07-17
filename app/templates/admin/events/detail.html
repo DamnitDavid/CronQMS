@@ -6,7 +6,7 @@
 {% block page_heading %}
 <h1>{{ event.title }}</h1>
 <div class="crumb">
-    <a href="/admin/events">Events</a> &middot; #{{ event.id }} &middot; {{ event.event_type }}
+    <a href="/admin/events">Events</a> &middot; #{{ event.id }} &middot; {{ event_type_label(event.event_type) }}
     &middot; <span class="badge status-{{ event.status }}">{{ event.status }}</span>
     {% if event.is_overdue %}<span class="badge overdue">Overdue</span>{% endif %}
 </div>

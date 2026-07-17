@@ -64,6 +64,7 @@ class Document(Base):
         "title",
         "category",
         "owner_id",
+        "owner_group_id",
         "review_period_months",
         "next_review_date",
         "retention_period_months",
@@ -79,6 +80,8 @@ class Document(Base):
     description = Column(Text, nullable=True)
 
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    # Optional owning team, reusing the shared assignee-group primitive.
+    owner_group_id = Column(Integer, ForeignKey("assignee_groups.id"), nullable=True, index=True)
 
     # Retention & periodic-review policy.
     review_period_months = Column(Integer, nullable=True)
@@ -92,6 +95,7 @@ class Document(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     owner = relationship("User", foreign_keys=[owner_id], lazy="joined")
+    owner_group = relationship("AssigneeGroup", foreign_keys=[owner_group_id], lazy="joined")
     versions = relationship(
         "DocumentVersion",
         back_populates="document",

@@ -53,7 +53,7 @@ class CommentsTest(unittest.TestCase):
             make_user("other", Role.INVESTIGATOR, cls.other_org_id)
 
             event = Event(
-                title="Discuss me", event_type="Non_Conformance", status="Open",
+                title="Discuss me", event_type="Defect", status="Open",
                 priority="High", organization_id=cls.org_id, reported_by=cls.ids["investigator"],
             )
             db.add(event)

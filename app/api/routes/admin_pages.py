@@ -20,15 +20,16 @@ from app.core.security import generate_temp_password, hash_password
 from app.database import get_db
 from app.models import AssigneeGroup, Capa, CustomField, User
 from app.models.custom_field import CustomFieldType
-from app.models.event import EventType
+from app.models.event import EventType, event_type_label
 from app.services.custom_fields import fields_for, unique_key
-from app.services import org_settings
+from app.services import nav_config, org_settings
 
 router = APIRouter(tags=["Admin"])
 
 templates = Jinja2Templates(
     directory=os.path.join(os.path.dirname(__file__), "..", "..", "templates")
 )
+templates.env.globals["event_type_label"] = event_type_label
 
 EVENT_TYPES = [t.value for t in EventType]
 FIELD_TYPES = [t.value for t in CustomFieldType]
@@ -104,16 +105,129 @@ async def config_save(
     )
 
 
+# --- Settings: Navigation (org-configurable sidebar) -----------------------
+# Number of group "slots" the editor exposes. Plenty for a sidebar; unused
+# slots (blank title) are ignored on save.
+NAV_MAX_GROUPS = 6
+
+
+def _nav_editor_context(db: Session, current_user: User) -> dict:
+    """Build the current placement of every module for the navigation editor."""
+    layout = nav_config.get_layout(db, current_user.organization_id)
+    # key -> (group_index, order) for placed modules.
+    placement: dict[str, tuple[int, int]] = {}
+    group_titles = ["" for _ in range(NAV_MAX_GROUPS)]
+    for gi, group in enumerate(layout.get("groups", [])[:NAV_MAX_GROUPS]):
+        group_titles[gi] = group.get("title", "")
+        for oi, key in enumerate(group.get("modules", [])):
+            placement[key] = (gi, oi)
+
+    # Rows for every registered module: placed ones first (in layout order),
+    # then hidden ones alphabetically by label.
+    rows = []
+    for key, mod in nav_config.MODULES.items():
+        gi, oi = placement.get(key, (None, 0))
+        rows.append(
+            {"key": key, "label": mod["label"], "group_index": gi, "order": oi}
+        )
+    rows.sort(
+        key=lambda r: (
+            r["group_index"] is None,
+            r["group_index"] if r["group_index"] is not None else 0,
+            r["order"],
+            r["label"],
+        )
+    )
+    return {
+        "group_titles": group_titles,
+        "group_slots": list(range(NAV_MAX_GROUPS)),
+        "module_rows": rows,
+    }
+
+
+@router.get("/admin/settings/navigation")
+async def navigation_page(
+    request: Request,
+    current_user: User = Depends(require_permission(Permission.SETTINGS_MANAGE)),
+    db: Session = Depends(get_db),
+    error: Optional[str] = None,
+    saved: Optional[str] = None,
+):
+    context = {
+        "request": request,
+        "current_user": current_user,
+        "error": error,
+        "saved": saved,
+    }
+    context.update(_nav_editor_context(db, current_user))
+    return templates.TemplateResponse("admin/settings/navigation.html", context)
+
+
+@router.post("/admin/settings/navigation")
+async def navigation_save(
+    request: Request,
+    current_user: User = Depends(require_permission(Permission.SETTINGS_MANAGE)),
+    db: Session = Depends(get_db),
+):
+    org_id = current_user.organization_id
+    form = await request.form()
+
+    if form.get("reset"):
+        nav_config.set_layout(db, org_id, nav_config.DEFAULT_LAYOUT)
+        db.commit()
+        return RedirectResponse(
+            "/admin/settings/navigation?saved=1", status_code=status.HTTP_303_SEE_OTHER
+        )
+
+    titles = [str(form.get(f"group_title__{i}", "")).strip() for i in range(NAV_MAX_GROUPS)]
+
+    # Collect each module's chosen group index and order.
+    buckets: dict[int, list[tuple[float, str]]] = {i: [] for i in range(NAV_MAX_GROUPS)}
+    for key in nav_config.MODULES:
+        raw_group = form.get(f"group__{key}", "")
+        if raw_group == "" or not str(raw_group).isdigit():
+            continue  # hidden
+        gi = int(raw_group)
+        if gi < 0 or gi >= NAV_MAX_GROUPS:
+            continue
+        raw_order = str(form.get(f"order__{key}", "")).strip()
+        try:
+            order = float(raw_order)
+        except (TypeError, ValueError):
+            order = float("inf")
+        buckets[gi].append((order, key))
+
+    groups = []
+    for i in range(NAV_MAX_GROUPS):
+        if not titles[i]:
+            continue
+        modules = [key for _, key in sorted(buckets[i], key=lambda t: (t[0], t[1]))]
+        groups.append({"title": titles[i], "modules": modules})
+
+    if not groups:
+        return RedirectResponse(
+            "/admin/settings/navigation?error="
+            + quote("Define at least one group with a title."),
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
+    nav_config.set_layout(db, org_id, {"groups": groups})
+    db.commit()
+    return RedirectResponse(
+        "/admin/settings/navigation?saved=1", status_code=status.HTTP_303_SEE_OTHER
+    )
+
+
 @router.get("/admin/settings/custom-fields")
 async def custom_fields_page(
     request: Request,
     current_user: User = Depends(require_permission(Permission.SETTINGS_MANAGE)),
     db: Session = Depends(get_db),
-    event_type: str = EventType.NON_CONFORMANCE.value,
+    event_type: str = EventType.DEFECT.value,
     error: Optional[str] = None,
 ):
     if event_type not in EVENT_TYPES:
-        event_type = EventType.NON_CONFORMANCE.value
+        event_type = EventType.DEFECT.value
     fields = fields_for(db, current_user.organization_id, event_type)
     return templates.TemplateResponse(
         "admin/settings/custom_fields.html",
@@ -140,7 +254,7 @@ async def custom_field_create(
     required: bool = Form(False),
 ):
     if event_type not in EVENT_TYPES:
-        return _settings_redirect(EventType.NON_CONFORMANCE.value, "Unknown event type.")
+        return _settings_redirect(EventType.DEFECT.value, "Unknown event type.")
     label = label.strip()
     if not label:
         return _settings_redirect(event_type, "Field label is required.")
@@ -186,7 +300,7 @@ async def custom_field_delete(
         )
         .first()
     )
-    event_type = field.event_type if field else EventType.NON_CONFORMANCE.value
+    event_type = field.event_type if field else EventType.DEFECT.value
     if field is not None:
         field.is_active = False
         db.add(field)

@@ -48,7 +48,7 @@ class CustomFieldsTest(unittest.TestCase):
         if os.path.exists(db_path):
             os.remove(db_path)
 
-    def _add_field(self, label, field_type, event_type="Non_Conformance", options="", required=False):
+    def _add_field(self, label, field_type, event_type="Defect", options="", required=False):
         data = {
             "event_type": event_type,
             "label": label,
@@ -71,28 +71,28 @@ class CustomFieldsTest(unittest.TestCase):
     def test_admin_can_add_field_and_it_shows(self):
         r = self._add_field("Scrap quantity", "number")
         self.assertEqual(r.status_code, 303)
-        page = self.client.get("/admin/settings/custom-fields?event_type=Non_Conformance")
+        page = self.client.get("/admin/settings/custom-fields?event_type=Defect")
         self.assertEqual(page.status_code, 200)
         self.assertIn("Scrap quantity", page.text)
 
     def test_fragment_returns_inputs_for_type(self):
         self._add_field("Root cause code", "text")
         fid = self._field_id("Root cause code")
-        frag = self.client.get("/admin/events/custom-fields?event_type=Non_Conformance")
+        frag = self.client.get("/admin/events/custom-fields?event_type=Defect")
         self.assertEqual(frag.status_code, 200)
         self.assertIn(f"cf_{fid}", frag.text)
 
     def test_fragment_is_inline_not_boxed(self):
         # The fields render inline in the main form, not inside a boxed sub-form.
         self._add_field("Root cause code", "text")
-        frag = self.client.get("/admin/events/custom-fields?event_type=Non_Conformance")
+        frag = self.client.get("/admin/events/custom-fields?event_type=Defect")
         self.assertNotIn('class="card"', frag.text)
         self.assertNotIn("Custom Information", frag.text)
 
     def test_select_field_renders_dropdown_with_options(self):
         self._add_field("Customer", "select", options="Acme Corp\nGlobex\nInitech")
         fid = self._field_id("Customer")
-        frag = self.client.get("/admin/events/custom-fields?event_type=Non_Conformance")
+        frag = self.client.get("/admin/events/custom-fields?event_type=Defect")
         self.assertIn(f'<select id="cf_{fid}"', frag.text)
         for opt in ("Acme Corp", "Globex", "Initech"):
             self.assertIn(opt, frag.text)
@@ -113,7 +113,7 @@ class CustomFieldsTest(unittest.TestCase):
         # Valid choice persists.
         ok = self.client.post(
             "/admin/events/create",
-            data={"title": "Valid pick", "event_type": "Non_Conformance",
+            data={"title": "Valid pick", "event_type": "Defect",
                   "priority": "Low", f"cf_{fid}": "Globex"},
         )
         self.assertEqual(ok.status_code, 200)
@@ -121,7 +121,7 @@ class CustomFieldsTest(unittest.TestCase):
         # Out-of-list value is rejected.
         bad = self.client.post(
             "/admin/events/create",
-            data={"title": "Bad pick", "event_type": "Non_Conformance",
+            data={"title": "Bad pick", "event_type": "Defect",
                   "priority": "Low", f"cf_{fid}": "Umbrella Corp"},
             follow_redirects=False,
         )
@@ -129,7 +129,7 @@ class CustomFieldsTest(unittest.TestCase):
         self.assertIn("error", bad.headers["location"])
 
     def test_fields_are_scoped_to_event_type(self):
-        self._add_field("NC only", "text", event_type="Non_Conformance")
+        self._add_field("NC only", "text", event_type="Defect")
         frag = self.client.get("/admin/events/custom-fields?event_type=CAPA")
         self.assertNotIn("NC only", frag.text)
 
@@ -145,7 +145,7 @@ class CustomFieldsTest(unittest.TestCase):
             "/admin/events/create",
             data={
                 "title": "Weld defect",
-                "event_type": "Non_Conformance",
+                "event_type": "Defect",
                 "priority": "High",
                 f"cf_{text_id}": "RC-42",
                 f"cf_{num_id}": "17",
@@ -174,7 +174,7 @@ class CustomFieldsTest(unittest.TestCase):
             "/admin/events/create",
             data={
                 "title": "Bad number",
-                "event_type": "Non_Conformance",
+                "event_type": "Defect",
                 "priority": "Low",
                 f"cf_{num_id}": "not-a-number",
             },
@@ -194,7 +194,7 @@ class CustomFieldsTest(unittest.TestCase):
         self._add_field("Temporary", "text")
         fid = self._field_id("Temporary")
         self.client.post(f"/admin/settings/custom-fields/{fid}/delete", follow_redirects=False)
-        frag = self.client.get("/admin/events/custom-fields?event_type=Non_Conformance")
+        frag = self.client.get("/admin/events/custom-fields?event_type=Defect")
         self.assertNotIn(f"cf_{fid}", frag.text)
 
     def test_required_field_blocks_empty_save(self):
@@ -203,7 +203,7 @@ class CustomFieldsTest(unittest.TestCase):
         # Empty required field -> rejected.
         bad = self.client.post(
             "/admin/events/create",
-            data={"title": "Missing rc", "event_type": "Non_Conformance",
+            data={"title": "Missing rc", "event_type": "Defect",
                   "priority": "Low", f"cf_{fid}": ""},
             follow_redirects=False,
         )
@@ -217,7 +217,7 @@ class CustomFieldsTest(unittest.TestCase):
         # Provided -> saved.
         ok = self.client.post(
             "/admin/events/create",
-            data={"title": "Has rc", "event_type": "Non_Conformance",
+            data={"title": "Has rc", "event_type": "Defect",
                   "priority": "Low", f"cf_{fid}": "RC-1"},
         )
         self.assertEqual(ok.status_code, 200)
@@ -227,7 +227,7 @@ class CustomFieldsTest(unittest.TestCase):
         fid = self._field_id("Date detected")
         bad = self.client.post(
             "/admin/events/create",
-            data={"title": "Bad date", "event_type": "Non_Conformance",
+            data={"title": "Bad date", "event_type": "Defect",
                   "priority": "Low", f"cf_{fid}": "not-a-date"},
             follow_redirects=False,
         )
@@ -235,7 +235,7 @@ class CustomFieldsTest(unittest.TestCase):
         self.assertIn("error", bad.headers["location"])
         ok = self.client.post(
             "/admin/events/create",
-            data={"title": "Good date", "event_type": "Non_Conformance",
+            data={"title": "Good date", "event_type": "Defect",
                   "priority": "Low", f"cf_{fid}": "2026-07-10"},
         )
         self.assertEqual(ok.status_code, 200)
@@ -258,7 +258,7 @@ class CustomFieldsTest(unittest.TestCase):
         self.assertEqual(resp.status_code, 403)
         create = viewer.post(
             "/admin/settings/custom-fields",
-            data={"event_type": "Non_Conformance", "label": "x", "field_type": "text"},
+            data={"event_type": "Defect", "label": "x", "field_type": "text"},
         )
         self.assertEqual(create.status_code, 403)
 

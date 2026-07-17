@@ -58,13 +58,13 @@ class BrowserAuthFlowTest(unittest.TestCase):
         finally:
             db.close()
 
-    def test_dashboard_requires_authentication(self):
+    def test_admin_requires_authentication(self):
         # No cookie, no bearer token -> the auth dependency must reject.
         fresh = TestClient(app)
-        response = fresh.get("/admin/dashboard")
+        response = fresh.get("/admin/events")
         self.assertIn(response.status_code, (401, 403))
 
-    def test_form_login_sets_cookie_and_loads_dashboard(self):
+    def test_form_login_sets_cookie_and_loads_landing(self):
         self._register_admin()
 
         # The HTML form posts application/x-www-form-urlencoded via htmx.
@@ -73,13 +73,13 @@ class BrowserAuthFlowTest(unittest.TestCase):
             data={"email": self.email, "password": self.password},
         )
         self.assertEqual(login.status_code, 204)
-        self.assertEqual(login.headers.get("HX-Redirect"), "/admin/dashboard")
+        self.assertEqual(login.headers.get("HX-Redirect"), "/admin/events")
         self.assertIn("access_token", self.client.cookies)
 
         # The cookie set above is now carried automatically by the client.
-        dashboard = self.client.get("/admin/dashboard")
-        self.assertEqual(dashboard.status_code, 200)
-        self.assertIn("dashboard", dashboard.text.lower())
+        landing = self.client.get("/admin/events")
+        self.assertEqual(landing.status_code, 200)
+        self.assertIn("events", landing.text.lower())
 
     def test_form_login_rejects_bad_credentials(self):
         response = self.client.post(
@@ -100,9 +100,9 @@ class BrowserAuthFlowTest(unittest.TestCase):
         logout = self.client.post("/api/auth/browser-logout")
         self.assertEqual(logout.status_code, 204)
         self.assertEqual(logout.headers.get("HX-Redirect"), "/login")
-        # After logout the dashboard is no longer reachable.
+        # After logout the admin area is no longer reachable.
         self.client.cookies.clear()
-        blocked = self.client.get("/admin/dashboard")
+        blocked = self.client.get("/admin/events")
         self.assertIn(blocked.status_code, (401, 403))
 
 

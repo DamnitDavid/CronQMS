@@ -27,6 +27,7 @@ class DocumentCreate(BaseModel):
     category: DocumentCategory = DocumentCategory.SOP
     description: Optional[str] = Field(default=None, max_length=5000)
     owner_id: Optional[int] = None
+    owner_group_id: Optional[int] = None
     review_period_months: Optional[int] = Field(default=None, ge=1, le=120)
     retention_period_months: Optional[int] = Field(default=None, ge=1, le=1200)
 
@@ -39,6 +40,7 @@ class DocumentUpdate(BaseModel):
     category: Optional[DocumentCategory] = None
     description: Optional[str] = Field(default=None, max_length=5000)
     owner_id: Optional[int] = None
+    owner_group_id: Optional[int] = None
     review_period_months: Optional[int] = Field(default=None, ge=1, le=120)
     retention_period_months: Optional[int] = Field(default=None, ge=1, le=1200)
 
@@ -92,6 +94,7 @@ class DocumentResponse(BaseModel):
     description: Optional[str]
     status: DocumentVersionStatus
     owner_id: Optional[int]
+    owner_group_id: Optional[int]
     review_period_months: Optional[int]
     next_review_date: Optional[date]
     retention_period_months: Optional[int]

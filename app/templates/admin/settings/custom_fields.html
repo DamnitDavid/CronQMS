@@ -18,7 +18,7 @@
         <label for="event_type" style="margin: 0;">Event type</label>
         <select id="event_type" name="event_type" onchange="this.form.submit()">
             {% for t in event_types %}
-            <option value="{{ t }}" {% if t == selected_type %}selected{% endif %}>{{ t }}</option>
+            <option value="{{ t }}" {% if t == selected_type %}selected{% endif %}>{{ event_type_label(t) }}</option>
             {% endfor %}
         </select>
         <noscript><button type="submit">Show</button></noscript>

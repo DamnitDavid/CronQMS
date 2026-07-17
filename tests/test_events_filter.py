@@ -30,7 +30,7 @@ class EventsFilterTest(unittest.TestCase):
         # A dropdown custom field to filter on.
         cls.client.post(
             "/admin/settings/custom-fields",
-            data={"event_type": "Non_Conformance", "label": "Customer",
+            data={"event_type": "Defect", "label": "Customer",
                   "field_type": "select", "options": "Acme Corp\nGlobex"},
         )
         db = SessionLocal()
@@ -40,10 +40,10 @@ class EventsFilterTest(unittest.TestCase):
             db.close()
         # Three events with different status/priority/customer.
         cls.client.post("/admin/events/create", data={
-            "title": "Weld porosity", "event_type": "Non_Conformance",
+            "title": "Weld porosity", "event_type": "Defect",
             "priority": "High", f"cf_{cls.cf_id}": "Globex"})
         cls.client.post("/admin/events/create", data={
-            "title": "Label misprint", "event_type": "Non_Conformance",
+            "title": "Label misprint", "event_type": "Defect",
             "priority": "Low", f"cf_{cls.cf_id}": "Acme Corp"})
         # Move the second to In_Progress so status filtering is testable.
         db = SessionLocal()
@@ -91,7 +91,7 @@ class EventsFilterTest(unittest.TestCase):
         self.assertNotIn("Label misprint", text)
 
     def test_custom_field_filter(self):
-        text = self._titles(f"/admin/events?event_type=Non_Conformance&cf_{self.cf_id}=Globex")
+        text = self._titles(f"/admin/events?event_type=Defect&cf_{self.cf_id}=Globex")
         self.assertIn("Weld porosity", text)
         self.assertNotIn("Label misprint", text)
 

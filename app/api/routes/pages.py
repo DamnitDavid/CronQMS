@@ -28,7 +28,7 @@ from app.database import get_db
 from app.models import Attachment, Comment, Event, EventCustomValue, Site, User
 from app.models import EventHistory
 from app.models.custom_field import CustomFieldType
-from app.models.event import EventStatus, EventType
+from app.models.event import EventStatus, EventType, event_type_label
 from app.services.custom_fields import fields_for, save_values, values_for
 from app.services.event_workflow import (
     WorkflowError,
@@ -44,6 +44,9 @@ EVENT_TYPE_VALUES = {t.value for t in EventType}
 router = APIRouter(tags=["Pages"])
 
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "..", "..", "templates"))
+# Expose the event-type display label to templates so they can render friendly
+# names (e.g. "Defects") instead of the raw stored value.
+templates.env.globals["event_type_label"] = event_type_label
 
 
 # --- helpers ---------------------------------------------------------------
@@ -141,7 +144,7 @@ async def login_page(
     db: Session = Depends(get_db),
 ):
     if current_user:
-        return RedirectResponse("/admin/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse("/admin/events", status_code=status.HTTP_303_SEE_OTHER)
     # Before any admin exists, the login page is a dead end — route first-run
     # visitors to the setup wizard instead.
     if not admin_exists(db):
@@ -164,7 +167,7 @@ async def event_custom_fields_fragment(
     request: Request,
     current_user: User = Depends(require_permission(Permission.EVENT_READ)),
     db: Session = Depends(get_db),
-    event_type: str = EventType.NON_CONFORMANCE.value,
+    event_type: str = EventType.DEFECT.value,
     event_id: Optional[str] = None,
 ):
     """Render the custom-field inputs for an event type (htmx swap target).
@@ -173,7 +176,7 @@ async def event_custom_fields_fragment(
     event's saved values, scoped to the caller's organization.
     """
     if event_type not in EVENT_TYPE_VALUES:
-        event_type = EventType.NON_CONFORMANCE.value
+        event_type = EventType.DEFECT.value
     fields = fields_for(db, current_user.organization_id, event_type)
     values: dict[int, str] = {}
     eid = _to_int(event_id)
@@ -321,7 +324,7 @@ async def admin_events_create_page(
 ):
     sites = db.query(Site).filter(Site.organization_id == current_user.organization_id).all()
     users = db.query(User).filter(User.organization_id == current_user.organization_id).all()
-    default_type = EventType.NON_CONFORMANCE.value
+    default_type = EventType.DEFECT.value
     return templates.TemplateResponse(
         "admin/events/create.html",
         {
@@ -364,7 +367,7 @@ async def admin_events_create_submit(
     machine: str = Form(""),
 ):
     if event_type not in EVENT_TYPE_VALUES:
-        event_type = EventType.NON_CONFORMANCE.value
+        event_type = EventType.DEFECT.value
     assigned_to, assigned_group_id = _parse_assignee(assignee)
     event = Event(
         title=title,
