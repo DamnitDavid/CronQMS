@@ -1,22 +1,34 @@
 """CAPA (Corrective And Preventive Action) endpoints."""
 
-from datetime import date
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.core.audit import set_audit_reason
 from app.core.permissions import Permission, require_permission
 from app.database import get_db
 from app.models import Capa, CapaStatus, Event, User, VerificationOutcome
-from app.schemas.capa import CapaCreate, CapaResponse, CapaUpdate, CapaVerify
+from app.schemas.capa import (
+    CapaCancel,
+    CapaCreate,
+    CapaReopen,
+    CapaResponse,
+    CapaStatusUpdate,
+    CapaUpdate,
+    CapaVerify,
+)
+from app.services.capa_workflow import apply_status_transition
+from app.services.capa_workflow import cancel as cancel_workflow
+from app.services.capa_workflow import reopen as reopen_workflow
+from app.services.capa_workflow import verify_effectiveness
+from app.services.event_workflow import WorkflowError
 
 router = APIRouter(prefix="/api/capas", tags=["CAPA"])
 
 # CAPA fields that are plain scalars settable straight from the update payload.
 _SCALAR_FIELDS = {
     "title",
+    "initiating_cause",
     "containment_actions",
     "root_cause",
     "root_cause_category",
@@ -81,7 +93,8 @@ async def create_capa(
     capa = Capa(
         organization_id=organization_id,
         title=capa_data.title,
-        status=CapaStatus.OPEN.value,
+        status=CapaStatus.DRAFT.value,
+        initiating_cause=capa_data.initiating_cause,
         containment_actions=capa_data.containment_actions,
         root_cause=capa_data.root_cause,
         root_cause_category=capa_data.root_cause_category,
@@ -148,13 +161,34 @@ async def update_capa(
         capa.events = _resolve_events(
             db, update_data.pop("event_ids") or [], capa.organization_id
         )
-    if "status" in update_data:
-        capa.status = update_data.pop("status").value
 
     for key, value in update_data.items():
         if key in _SCALAR_FIELDS:
             setattr(capa, key, value)
 
+    db.add(capa)
+    db.commit()
+    db.refresh(capa)
+    return capa
+
+
+@router.patch("/{capa_id}/status", response_model=CapaResponse)
+async def patch_capa_status(
+    capa_id: int,
+    status_update: CapaStatusUpdate,
+    current_user: User = Depends(require_permission(Permission.CAPA_UPDATE)),
+    db: Session = Depends(get_db),
+) -> Capa:
+    """Advance a CAPA through the non-terminal workflow stages.
+
+    Verifying (close/fail), reopening, and cancelling are privileged actions
+    with their own endpoints and are not reachable here.
+    """
+    capa = _get_capa_in_org(db, capa_id, current_user)
+    try:
+        apply_status_transition(capa, status_update.status)
+    except WorkflowError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message)
     db.add(capa)
     db.commit()
     db.refresh(capa)
@@ -170,26 +204,63 @@ async def verify_capa(
 ) -> Capa:
     """Record an independent effectiveness verification of the CAPA.
 
-    Verification must be performed by someone other than the CAPA owner, so the
-    check is independent. An 'Effective' outcome closes the CAPA.
+    Verification must be performed by someone other than the CAPA owner, and
+    the CAPA must be in Effectiveness_Check. An 'Effective' outcome closes the
+    CAPA; an 'Ineffective' outcome fails it.
     """
     capa = _get_capa_in_org(db, capa_id, current_user)
-
-    if capa.owner_id is not None and capa.owner_id == current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Effectiveness verification must be independent of the CAPA owner",
+    try:
+        verify_effectiveness(
+            db,
+            capa,
+            current_user,
+            verification.outcome,
+            verification.verification_date,
+            verification.reason,
         )
+    except WorkflowError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+    db.add(capa)
+    db.commit()
+    db.refresh(capa)
+    return capa
 
-    set_audit_reason(db, verification.reason)
-    capa.verification_outcome = verification.outcome.value
-    capa.verification_date = verification.verification_date or date.today()
-    capa.verified_by = current_user.id
-    if verification.outcome == VerificationOutcome.EFFECTIVE:
-        capa.status = CapaStatus.CLOSED.value
-    elif verification.outcome == VerificationOutcome.INEFFECTIVE:
-        capa.status = CapaStatus.IN_PROGRESS.value
 
+@router.post("/{capa_id}/reopen", response_model=CapaResponse)
+async def reopen_capa(
+    capa_id: int,
+    reopen: CapaReopen,
+    current_user: User = Depends(require_permission(Permission.CAPA_REOPEN)),
+    db: Session = Depends(get_db),
+) -> Capa:
+    """Reopen a Closed or Failed_Effectiveness CAPA into Investigation.
+
+    Privileged, and audit-logged with a reason.
+    """
+    capa = _get_capa_in_org(db, capa_id, current_user)
+    try:
+        reopen_workflow(db, capa, reopen.reason)
+    except WorkflowError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+    db.add(capa)
+    db.commit()
+    db.refresh(capa)
+    return capa
+
+
+@router.post("/{capa_id}/cancel", response_model=CapaResponse)
+async def cancel_capa(
+    capa_id: int,
+    cancellation: CapaCancel,
+    current_user: User = Depends(require_permission(Permission.CAPA_CANCEL)),
+    db: Session = Depends(get_db),
+) -> Capa:
+    """Cancel a CAPA from any non-terminal state. Audit-logged with a reason."""
+    capa = _get_capa_in_org(db, capa_id, current_user)
+    try:
+        cancel_workflow(db, capa, cancellation.reason)
+    except WorkflowError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message)
     db.add(capa)
     db.commit()
     db.refresh(capa)

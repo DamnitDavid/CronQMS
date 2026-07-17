@@ -25,10 +25,13 @@ from app.database import Base
 
 
 class CapaStatus(str, Enum):
-    OPEN = "Open"
-    IN_PROGRESS = "In_Progress"
-    PENDING_VERIFICATION = "Pending_Verification"
+    DRAFT = "Draft"
+    INVESTIGATION = "Investigation"
+    ACTION_PLAN = "Action_Plan"
+    IMPLEMENTATION = "Implementation"
+    EFFECTIVENESS_CHECK = "Effectiveness_Check"
     CLOSED = "Closed"
+    FAILED_EFFECTIVENESS = "Failed_Effectiveness"
     CANCELLED = "Cancelled"
 
 
@@ -57,6 +60,7 @@ class Capa(Base):
     __audit_fields__ = (
         "title",
         "status",
+        "initiating_cause",
         "containment_actions",
         "root_cause",
         "root_cause_category",
@@ -74,7 +78,11 @@ class Capa(Base):
     id = Column(Integer, primary_key=True, index=True)
     organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
     title = Column(String(255), nullable=False)
-    status = Column(String(30), nullable=False, default=CapaStatus.OPEN.value)
+    status = Column(String(30), nullable=False, default=CapaStatus.DRAFT.value)
+
+    # Initiating cause: what triggered this CAPA. Required (directly or via a
+    # linked event) before leaving Draft — see app.services.capa_workflow.
+    initiating_cause = Column(Text, nullable=True)
 
     # Containment and structured root-cause analysis.
     containment_actions = Column(Text, nullable=True)

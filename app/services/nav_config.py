@@ -44,9 +44,11 @@ MODULES: dict[str, dict] = {
 # that count as "open" for each. Modules not listed here get no badge.
 _OPEN_EVENT_STATUSES = (EventStatus.OPEN.value, EventStatus.IN_PROGRESS.value)
 _OPEN_CAPA_STATUSES = (
-    CapaStatus.OPEN.value,
-    CapaStatus.IN_PROGRESS.value,
-    CapaStatus.PENDING_VERIFICATION.value,
+    CapaStatus.DRAFT.value,
+    CapaStatus.INVESTIGATION.value,
+    CapaStatus.ACTION_PLAN.value,
+    CapaStatus.IMPLEMENTATION.value,
+    CapaStatus.EFFECTIVENESS_CHECK.value,
 )
 _OPEN_ALERT_STATUSES = (AlertStatus.OPEN.value, AlertStatus.ACKNOWLEDGED.value)
 
