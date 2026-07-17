@@ -4,7 +4,7 @@ import os
 import unittest
 import uuid
 
-os.environ.setdefault("DATABASE_URL", "sqlite:///./test_proins.db")
+os.environ.setdefault("DATABASE_URL", "sqlite:///./test_cronqms.db")
 
 from fastapi.testclient import TestClient
 
@@ -57,7 +57,7 @@ class WorkflowTest(unittest.TestCase):
     def tearDownClass(cls):
         Base.metadata.drop_all(bind=engine)
         engine.dispose()
-        db_path = os.path.join(os.getcwd(), "test_proins.db")
+        db_path = os.path.join(os.getcwd(), "test_cronqms.db")
         if os.path.exists(db_path):
             os.remove(db_path)
 

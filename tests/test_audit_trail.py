@@ -7,7 +7,7 @@ import uuid
 # Configure an isolated SQLite database before importing the app. Each test
 # module sets this itself because ``unittest discover`` imports test modules as
 # top-level names, bypassing tests/__init__.py.
-os.environ.setdefault("DATABASE_URL", "sqlite:///./test_proins.db")
+os.environ.setdefault("DATABASE_URL", "sqlite:///./test_cronqms.db")
 
 from fastapi.testclient import TestClient
 from sqlalchemy import text
@@ -58,7 +58,7 @@ class AuditTrailTest(unittest.TestCase):
     def tearDownClass(cls):
         Base.metadata.drop_all(bind=engine)
         engine.dispose()
-        db_path = os.path.join(os.getcwd(), "test_proins.db")
+        db_path = os.path.join(os.getcwd(), "test_cronqms.db")
         if os.path.exists(db_path):
             os.remove(db_path)
 

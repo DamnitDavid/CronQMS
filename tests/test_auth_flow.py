@@ -3,7 +3,7 @@ import unittest
 import uuid
 
 # Use a local SQLite file database for isolated test execution.
-os.environ.setdefault("DATABASE_URL", "sqlite:///./test_proins.db")
+os.environ.setdefault("DATABASE_URL", "sqlite:///./test_cronqms.db")
 
 from fastapi.testclient import TestClient
 
@@ -27,7 +27,7 @@ class AuthFlowIntegrationTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         Base.metadata.drop_all(bind=engine)
-        test_db_path = os.path.join(os.getcwd(), "test_proins.db")
+        test_db_path = os.path.join(os.getcwd(), "test_cronqms.db")
         if os.path.exists(test_db_path):
             os.remove(test_db_path)
 

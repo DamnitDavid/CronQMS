@@ -1,4 +1,4 @@
-# Git ignore for Proins project
+# Git ignore for CronQMS project
 
 # Environment variables
 .env
