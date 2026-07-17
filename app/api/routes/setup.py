@@ -128,6 +128,6 @@ async def setup_submit(
 
     access_token, expires_in = create_token_for_user(admin.id, admin.email)
     response = Response(status_code=status.HTTP_204_NO_CONTENT)
-    response.headers["HX-Redirect"] = "/admin/events"
+    response.headers["HX-Redirect"] = "/admin/defects"
     set_auth_cookie(response, access_token, expires_in)
     return response

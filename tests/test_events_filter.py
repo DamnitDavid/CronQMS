@@ -11,7 +11,7 @@ get_settings.cache_clear()
 
 from app.database import Base, SessionLocal, engine
 from app.main import app
-from app.models import CustomField, Event
+from app.models import Event
 
 
 class EventsFilterTest(unittest.TestCase):
@@ -27,24 +27,13 @@ class EventsFilterTest(unittest.TestCase):
                   "password": "AdminPass123!", "confirm_password": "AdminPass123!"},
         )
         assert resp.status_code == 204, resp.text
-        # A dropdown custom field to filter on.
-        cls.client.post(
-            "/admin/settings/custom-fields",
-            data={"event_type": "Defect", "label": "Customer",
-                  "field_type": "select", "options": "Acme Corp\nGlobex"},
-        )
-        db = SessionLocal()
-        try:
-            cls.cf_id = db.query(CustomField).filter(CustomField.label == "Customer").first().id
-        finally:
-            db.close()
-        # Three events with different status/priority/customer.
-        cls.client.post("/admin/events/create", data={
+        # Two defects with different status/priority.
+        cls.client.post("/admin/defects/create", data={
             "title": "Weld porosity", "event_type": "Defect",
-            "priority": "High", f"cf_{cls.cf_id}": "Globex"})
-        cls.client.post("/admin/events/create", data={
+            "priority": "High"})
+        cls.client.post("/admin/defects/create", data={
             "title": "Label misprint", "event_type": "Defect",
-            "priority": "Low", f"cf_{cls.cf_id}": "Acme Corp"})
+            "priority": "Low"})
         # Move the second to In_Progress so status filtering is testable.
         db = SessionLocal()
         try:
@@ -71,32 +60,27 @@ class EventsFilterTest(unittest.TestCase):
         return r.text
 
     def test_no_filter_shows_all(self):
-        text = self._titles("/admin/events")
+        text = self._titles("/admin/defects")
         self.assertIn("Weld porosity", text)
         self.assertIn("Label misprint", text)
 
     def test_status_filter(self):
-        text = self._titles("/admin/events?status=Open")
+        text = self._titles("/admin/defects?status=Open")
         self.assertIn("Weld porosity", text)
         self.assertNotIn("Label misprint", text)
 
     def test_priority_filter(self):
-        text = self._titles("/admin/events?priority=Low")
+        text = self._titles("/admin/defects?priority=Low")
         self.assertIn("Label misprint", text)
         self.assertNotIn("Weld porosity", text)
 
     def test_search_filter(self):
-        text = self._titles("/admin/events?search=porosity")
-        self.assertIn("Weld porosity", text)
-        self.assertNotIn("Label misprint", text)
-
-    def test_custom_field_filter(self):
-        text = self._titles(f"/admin/events?event_type=Defect&cf_{self.cf_id}=Globex")
+        text = self._titles("/admin/defects?search=porosity")
         self.assertIn("Weld porosity", text)
         self.assertNotIn("Label misprint", text)
 
     def test_full_page_when_not_htmx(self):
-        r = self.client.get("/admin/events")
+        r = self.client.get("/admin/defects")
         self.assertEqual(r.status_code, 200)
         self.assertIn("<html", r.text)  # full page includes the shell
         self.assertIn("filter-bar", r.text)

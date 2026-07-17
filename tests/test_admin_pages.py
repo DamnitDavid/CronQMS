@@ -53,7 +53,7 @@ class AdminPagesTest(unittest.TestCase):
 
     def test_admin_can_reach_all_sections(self):
         for path in [
-            "/admin/settings/custom-fields",
+            "/admin/settings/groups",
             "/admin/users",
             "/admin/reports",
             "/admin/capa",
@@ -64,11 +64,11 @@ class AdminPagesTest(unittest.TestCase):
     def test_settings_redirect(self):
         resp = self.admin.get("/admin/settings", follow_redirects=False)
         self.assertEqual(resp.status_code, 303)
-        self.assertEqual(resp.headers["location"], "/admin/settings/custom-fields")
+        self.assertEqual(resp.headers["location"], "/admin/settings/groups")
 
     def test_viewer_gated_out_of_admin_pages(self):
         # Settings and Users are Admin-only; a Viewer must be refused.
-        self.assertEqual(self.viewer.get("/admin/settings/custom-fields").status_code, 403)
+        self.assertEqual(self.viewer.get("/admin/settings/groups").status_code, 403)
         self.assertEqual(self.viewer.get("/admin/users").status_code, 403)
 
     def test_viewer_can_see_reports_and_capa(self):

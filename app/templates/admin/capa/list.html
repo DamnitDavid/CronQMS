@@ -4,6 +4,12 @@
 {% set active_nav = "capa" %}
 
 {% block admin_content %}
+{% if perms.can_create %}
+<section class="page-actions">
+    <a class="button-primary" href="/admin/capa/create">New CAPA</a>
+</section>
+{% endif %}
+
 <section class="table-shell">
     <div class="table-scroll">
         <table class="data-table">

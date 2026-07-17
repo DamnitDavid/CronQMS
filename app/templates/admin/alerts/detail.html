@@ -28,9 +28,9 @@
 
 <section class="detail-grid">
     <div class="field"><div class="label">Reference</div><div class="value">{{ alert.reference }}</div></div>
-    <div class="field"><div class="label">Source Event</div><div class="value">
+    <div class="field"><div class="label">Source Defect</div><div class="value">
         {%- if alert.event_id and alert.event -%}
-            <a href="/admin/events/{{ alert.event_id }}">#{{ alert.event_id }} {{ alert.event.title }}</a>
+            <a href="/admin/defects/{{ alert.event_id }}">#{{ alert.event_id }} {{ alert.event.title }}</a>
         {%- else -%}
             N/A
         {%- endif -%}

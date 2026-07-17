@@ -49,14 +49,14 @@ class NavConfigUnitTest(unittest.TestCase):
     def test_build_nav_hides_modules_without_privilege(self):
         layout = {
             "groups": [
-                {"title": "Ops", "modules": ["events", "users"]},
+                {"title": "Ops", "modules": ["defects", "users"]},
             ]
         }
-        # A user with only event:read sees Events but not Users.
+        # A user with only event:read sees Defects but not Users.
         nav = nav_config.build_nav(layout, {"event:read"})
         self.assertEqual(len(nav), 1)
         keys = [m["key"] for m in nav[0]["modules"]]
-        self.assertEqual(keys, ["events"])
+        self.assertEqual(keys, ["defects"])
 
     def test_build_nav_drops_empty_groups(self):
         layout = {"groups": [{"title": "Admin", "modules": ["users"]}]}
@@ -64,10 +64,10 @@ class NavConfigUnitTest(unittest.TestCase):
         self.assertEqual(nav, [])
 
     def test_sanitize_drops_unknown_modules_and_untitled_groups(self):
-        raw = {"groups": [{"title": "", "modules": ["events"]},
-                          {"title": "Good", "modules": ["events", "bogus"]}]}
+        raw = {"groups": [{"title": "", "modules": ["defects"]},
+                          {"title": "Good", "modules": ["defects", "bogus"]}]}
         clean = nav_config._sanitize(raw)
-        self.assertEqual(clean, {"groups": [{"title": "Good", "modules": ["events"]}]})
+        self.assertEqual(clean, {"groups": [{"title": "Good", "modules": ["defects"]}]})
 
 
 class NavigationEditorTest(unittest.TestCase):
@@ -91,12 +91,12 @@ class NavigationEditorTest(unittest.TestCase):
             os.remove(db_path)
 
     def test_save_custom_layout_reflected_in_sidebar(self):
-        # Put Events under a custom group title; hide everything else.
-        form = {"group_title__0": "Frontline", "group__events": "0", "order__events": "0"}
+        # Put Defects under a custom group title; hide everything else.
+        form = {"group_title__0": "Frontline", "group__defects": "0", "order__defects": "0"}
         r = self.client.post("/admin/settings/navigation", data=form, follow_redirects=False)
         self.assertEqual(r.status_code, 303)
 
-        page = self.client.get("/admin/events")
+        page = self.client.get("/admin/defects")
         self.assertEqual(page.status_code, 200)
         self.assertIn("Frontline", page.text)
 
@@ -107,12 +107,12 @@ class NavigationEditorTest(unittest.TestCase):
         finally:
             db.close()
         self.assertEqual(layout["groups"][0]["title"], "Frontline")
-        self.assertIn("events", layout["groups"][0]["modules"])
+        self.assertIn("defects", layout["groups"][0]["modules"])
 
     def test_reset_restores_default(self):
         self.client.post(
             "/admin/settings/navigation",
-            data={"group_title__0": "Only", "group__events": "0"},
+            data={"group_title__0": "Only", "group__defects": "0"},
             follow_redirects=False,
         )
         r = self.client.post(

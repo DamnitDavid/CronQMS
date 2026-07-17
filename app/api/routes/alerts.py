@@ -53,7 +53,7 @@ def _event_or_404(db: Session, event_id: int, current_user: User) -> Event:
         .first()
     )
     if not event or event.organization_id != current_user.organization_id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Defect not found")
     return event
 
 
@@ -202,8 +202,8 @@ def _unread_count(db: Session, user_id: int) -> int:
     )
 
 
-# --- create (from an event) ------------------------------------------------
-@router.get("/admin/events/{event_id}/alerts/new")
+# --- create (from a defect) -------------------------------------------------
+@router.get("/admin/defects/{event_id}/alerts/new")
 async def alert_create_page(
     event_id: int,
     request: Request,
@@ -218,8 +218,8 @@ async def alert_create_page(
             "request": request,
             "current_user": current_user,
             "event": event,
-            "form_action": f"/admin/events/{event.id}/alerts",
-            "cancel_url": f"/admin/events/{event.id}",
+            "form_action": f"/admin/defects/{event.id}/alerts",
+            "cancel_url": f"/admin/defects/{event.id}",
             "groups": _org_groups(db, current_user.organization_id),
             "alert_types": ALERT_TYPE_VALUES,
             "severities": ALERT_SEVERITY_VALUES,
@@ -230,7 +230,7 @@ async def alert_create_page(
     )
 
 
-@router.post("/admin/events/{event_id}/alerts")
+@router.post("/admin/defects/{event_id}/alerts")
 async def alert_create_submit(
     event_id: int,
     current_user: User = Depends(require_permission(Permission.ALERT_CREATE)),
@@ -260,7 +260,7 @@ async def alert_create_submit(
         from urllib.parse import quote
 
         return RedirectResponse(
-            f"/admin/events/{event_id}/alerts/new?error={quote(error)}",
+            f"/admin/defects/{event_id}/alerts/new?error={quote(error)}",
             status_code=status.HTTP_303_SEE_OTHER,
         )
     db.commit()

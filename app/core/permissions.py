@@ -181,14 +181,14 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
 # Human-readable labels + grouping for the roles-management UI. The prefix
 # before ``:`` names the resource group; the map supplies friendly labels.
 PERMISSION_LABELS: dict[Permission, str] = {
-    Permission.EVENT_CREATE: "Create events",
-    Permission.EVENT_READ: "View events",
-    Permission.EVENT_UPDATE: "Edit events",
-    Permission.EVENT_DELETE: "Delete events",
-    Permission.EVENT_CHANGE_STATUS: "Change event status",
-    Permission.EVENT_APPROVE_CLOSURE: "Approve event closure",
-    Permission.EVENT_REOPEN: "Reopen events",
-    Permission.EVENT_COMMENT: "Comment on events",
+    Permission.EVENT_CREATE: "Create defects",
+    Permission.EVENT_READ: "View defects",
+    Permission.EVENT_UPDATE: "Edit defects",
+    Permission.EVENT_DELETE: "Delete defects",
+    Permission.EVENT_CHANGE_STATUS: "Change defect status",
+    Permission.EVENT_APPROVE_CLOSURE: "Approve defect closure",
+    Permission.EVENT_REOPEN: "Reopen defects",
+    Permission.EVENT_COMMENT: "Comment on defects",
     Permission.CAPA_CREATE: "Create CAPAs",
     Permission.CAPA_READ: "View CAPAs",
     Permission.CAPA_UPDATE: "Edit CAPAs",
@@ -228,7 +228,7 @@ PERMISSION_LABELS: dict[Permission, str] = {
 }
 
 _GROUP_TITLES = {
-    "event": "Events",
+    "event": "Defects",
     "capa": "CAPA",
     "document": "Documents",
     "alert": "Alerts",
