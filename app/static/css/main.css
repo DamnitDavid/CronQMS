@@ -418,12 +418,77 @@ small {
     opacity: 0.9;
 }
 
-.app-sidebar .sidebar-foot {
+.app-sidebar nav a .nav-count {
+    margin-left: auto;
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.11);
+    color: var(--sidebar-text);
+    border-radius: var(--radius-pill);
+    padding: 0.05rem 0.45rem;
+    min-width: 20px;
+    text-align: center;
+}
+
+.app-sidebar nav a.active .nav-count {
+    background: var(--primary);
+    color: #fff;
+}
+
+.app-sidebar nav a .nav-count.alert {
+    background: rgba(180, 35, 24, 0.28);
+    color: #fca5a5;
+}
+
+.app-sidebar .sidebar-user {
     margin-top: auto;
-    padding: 0.9rem 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.85rem 1.1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    color: inherit;
+}
+
+.app-sidebar .sidebar-user:hover {
+    background: rgba(255, 255, 255, 0.05);
+    text-decoration: none;
+}
+
+.app-sidebar .sidebar-user .avatar {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+}
+
+.app-sidebar .sidebar-user-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.3;
+}
+
+.app-sidebar .sidebar-user-name {
+    font-size: 0.84rem;
+    color: #fff;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.app-sidebar .sidebar-user-role {
     font-size: 0.72rem;
     color: var(--sidebar-text-muted);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* Main column */
@@ -465,11 +530,12 @@ small {
 
 .app-shellbar .shell-search {
     position: relative;
-    width: min(320px, 30vw);
+    width: min(340px, 30vw);
 }
 
 .app-shellbar .shell-search input {
     padding-left: 2.1rem;
+    padding-right: 2.2rem;
     background: var(--surface-2);
     border-color: var(--border);
 }
@@ -482,6 +548,20 @@ small {
     width: 16px;
     height: 16px;
     color: var(--muted);
+    pointer-events: none;
+}
+
+.app-shellbar .shell-search-kbd {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font: 600 0.68rem ui-monospace, Menlo, monospace;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 5px;
+    background: var(--surface);
     pointer-events: none;
 }
 
@@ -510,36 +590,21 @@ small {
 }
 
 .user-chip {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    padding: 0.3rem 0.5rem 0.3rem 0.35rem;
-    border-radius: var(--radius-pill);
-    border: 1px solid var(--border);
-    background: var(--surface);
+    display: inline-flex;
 }
 
 .user-chip .avatar {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 30px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     background: var(--primary);
     color: #fff;
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     font-weight: 700;
     text-transform: uppercase;
-}
-
-.user-chip .user-email {
-    font-size: 0.85rem;
-    color: var(--text);
-    max-width: 180px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 /* Page content area */
@@ -685,6 +750,132 @@ table.data-table tbody tr.overdue td:first-child {
     padding: 2.5rem 1rem;
     text-align: center;
     color: var(--muted);
+}
+
+/* Richer empty state (events table): icon, message, next actions. */
+.table-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 3rem 2rem;
+}
+
+.table-empty-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    background: var(--primary-soft);
+    color: var(--primary);
+}
+
+.table-empty-icon svg {
+    width: 26px;
+    height: 26px;
+}
+
+.table-empty-state h3 {
+    margin: 0 0 0.4rem;
+    font-size: 1.05rem;
+    color: var(--heading);
+}
+
+.table-empty-state p {
+    margin: 0 0 1.3rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    max-width: 360px;
+    line-height: 1.55;
+}
+
+.table-empty-actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* Loading skeleton (shown via hx-indicator while the events table swaps). */
+.events-pane .sk-tablewrap {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.events-pane.htmx-request .sk-tablewrap {
+    display: block;
+}
+
+.events-pane.htmx-request > .table-shell {
+    display: none;
+}
+
+.sk {
+    background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface) 37%, var(--surface-2) 63%);
+    background-size: 400% 100%;
+    animation: sk-shimmer 1.4s ease infinite;
+    border-radius: 6px;
+    height: 12px;
+}
+
+.sk-pill {
+    height: 20px;
+    width: 64px;
+    border-radius: var(--radius-pill);
+}
+
+@keyframes sk-shimmer {
+    0% { background-position: 100% 0; }
+    100% { background-position: 0 0; }
+}
+
+.sk-row {
+    display: grid;
+    grid-template-columns: 44px 2.2fr 1fr 1fr 1.2fr;
+    gap: 1.1rem;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.sk-row:last-child {
+    border-bottom: none;
+}
+
+.sk-row-head {
+    background: var(--surface-2);
+    padding: 0.7rem 1rem;
+}
+
+.sk-row-head .sk {
+    height: 9px;
+}
+
+/* Inline error banner (partial htmx failures, e.g. events table refresh). */
+.banner-err {
+    display: flex;
+    gap: 0.7rem;
+    align-items: flex-start;
+    background: var(--danger-soft);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    border-radius: var(--radius-sm);
+    padding: 0.8rem 0.95rem;
+    font-size: 0.9rem;
+}
+
+.banner-err svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    margin-top: 1px;
 }
 
 /* Filter bar */
@@ -1227,10 +1418,6 @@ code {
     }
 
     .app-shellbar .shell-search {
-        display: none;
-    }
-
-    .user-chip .user-email {
         display: none;
     }
 }

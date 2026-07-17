@@ -15,6 +15,9 @@ from typing import Iterable
 
 from sqlalchemy.orm import Session
 
+from app.models.alert import Alert, AlertStatus
+from app.models.capa import Capa, CapaStatus
+from app.models.event import Event, EventStatus
 from app.services import org_settings
 
 # OrgSetting key holding the JSON nav layout.
@@ -36,6 +39,16 @@ MODULES: dict[str, dict] = {
     "users": {"label": "Users", "href": "/admin/users", "permission": "user:manage"},
     "settings": {"label": "Settings", "href": "/admin/settings/custom-fields", "permission": "settings:manage"},
 }
+
+# Nav module keys that show a live open-item count badge, and the statuses
+# that count as "open" for each. Modules not listed here get no badge.
+_OPEN_EVENT_STATUSES = (EventStatus.OPEN.value, EventStatus.IN_PROGRESS.value)
+_OPEN_CAPA_STATUSES = (
+    CapaStatus.OPEN.value,
+    CapaStatus.IN_PROGRESS.value,
+    CapaStatus.PENDING_VERIFICATION.value,
+)
+_OPEN_ALERT_STATUSES = (AlertStatus.OPEN.value, AlertStatus.ACKNOWLEDGED.value)
 
 # The default sidebar: mirrors the historical layout (Dashboard removed).
 DEFAULT_LAYOUT: dict = {
@@ -98,8 +111,9 @@ def set_layout(db: Session, organization_id: int, layout: dict) -> None:
 def build_nav(layout: dict, granted: Iterable[str]) -> list[dict]:
     """Resolve a layout + permission set into renderable groups.
 
-    Returns ``[{"title", "modules": [{"key", "label", "href"}, ...]}, ...]`` with
-    modules the caller lacks privilege for removed and empty groups dropped.
+    Returns ``[{"title", "modules": [{"key", "label", "href", "count"}, ...]}, ...]``
+    with modules the caller lacks privilege for removed and empty groups dropped.
+    ``count`` is ``None`` until ``visible_nav`` fills in live badge counts.
     """
     granted_set = set(granted or ())
     result: list[dict] = []
@@ -108,14 +122,48 @@ def build_nav(layout: dict, granted: Iterable[str]) -> list[dict]:
         for key in group.get("modules", []):
             mod = MODULES.get(key)
             if mod and mod["permission"] in granted_set:
-                items.append({"key": key, "label": mod["label"], "href": mod["href"]})
+                items.append({"key": key, "label": mod["label"], "href": mod["href"], "count": None})
         if items:
             result.append({"title": group["title"], "modules": items})
     return result
+
+
+def _nav_counts(db: Session, organization_id: int, keys: set[str]) -> dict[str, int]:
+    """Open-item counts for the nav badge, one targeted query per requested key."""
+    counts: dict[str, int] = {}
+    if "events" in keys:
+        counts["events"] = (
+            db.query(Event)
+            .filter(Event.organization_id == organization_id, Event.status.in_(_OPEN_EVENT_STATUSES))
+            .count()
+        )
+    if "capa" in keys:
+        counts["capa"] = (
+            db.query(Capa)
+            .filter(Capa.organization_id == organization_id, Capa.status.in_(_OPEN_CAPA_STATUSES))
+            .count()
+        )
+    if "alerts" in keys:
+        counts["alerts"] = (
+            db.query(Alert)
+            .filter(Alert.organization_id == organization_id, Alert.status.in_(_OPEN_ALERT_STATUSES))
+            .count()
+        )
+    return counts
 
 
 def visible_nav(db: Session, user) -> list[dict]:
     """Build the sidebar for ``user`` from their org layout and granted perms."""
     granted = getattr(user, "granted_permissions", set())
     layout = get_layout(db, user.organization_id) if user.organization_id else DEFAULT_LAYOUT
-    return build_nav(layout, granted)
+    nav = build_nav(layout, granted)
+
+    if user.organization_id:
+        keys = {m["key"] for g in nav for m in g["modules"]} & {"events", "capa", "alerts"}
+        if keys:
+            counts = _nav_counts(db, user.organization_id, keys)
+            for group in nav:
+                for module in group["modules"]:
+                    if module["key"] in counts:
+                        module["count"] = counts[module["key"]]
+    return nav
