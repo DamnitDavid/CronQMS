@@ -75,7 +75,7 @@ class AlertsTest(unittest.TestCase):
         return gid
 
     def _make_capa_event(self) -> int:
-        self.client.post("/admin/events/create", data={
+        self.client.post("/admin/defects/create", data={
             "title": "Housing crack", "event_type": EventType.CAPA.value, "priority": "High"})
         db = SessionLocal()
         try:
@@ -87,7 +87,7 @@ class AlertsTest(unittest.TestCase):
     def test_create_alert_notifies_group_members(self):
         gid = self._make_group_with_member()
         eid = self._make_capa_event()
-        resp = self.client.post(f"/admin/events/{eid}/alerts", data={
+        resp = self.client.post(f"/admin/defects/{eid}/alerts", data={
             "title": "Do not ship lot 4471", "alert_type": "Quality", "severity": "High",
             "required_actions": "Quarantine affected lots", "recipient_group_ids": gid})
         self.assertEqual(resp.status_code, 200, resp.text)
@@ -110,7 +110,7 @@ class AlertsTest(unittest.TestCase):
     def test_create_alert_requires_a_group(self):
         eid = self._make_capa_event()
         # No recipient_group_ids -> redirected back to the form, no alert created.
-        resp = self.client.post(f"/admin/events/{eid}/alerts", data={
+        resp = self.client.post(f"/admin/defects/{eid}/alerts", data={
             "title": "Missing group", "alert_type": "Quality", "severity": "Low"})
         self.assertEqual(resp.status_code, 200)
         self.assertIn("Select at least one recipient group", resp.text)
@@ -123,7 +123,7 @@ class AlertsTest(unittest.TestCase):
     def test_acknowledgement_upload_and_download(self):
         gid = self._make_group_with_member()
         eid = self._make_capa_event()
-        self.client.post(f"/admin/events/{eid}/alerts", data={
+        self.client.post(f"/admin/defects/{eid}/alerts", data={
             "title": "Signable", "alert_type": "Safety", "severity": "Critical",
             "recipient_group_ids": gid})
         db = SessionLocal()
@@ -159,7 +159,7 @@ class AlertsTest(unittest.TestCase):
     def test_empty_acknowledgement_rejected(self):
         gid = self._make_group_with_member()
         eid = self._make_capa_event()
-        self.client.post(f"/admin/events/{eid}/alerts", data={
+        self.client.post(f"/admin/defects/{eid}/alerts", data={
             "title": "NoEmpty", "alert_type": "Quality", "severity": "Low",
             "recipient_group_ids": gid})
         db = SessionLocal()
@@ -178,7 +178,7 @@ class AlertsTest(unittest.TestCase):
         data = {"title": title, "alert_type": "Quality", "severity": "Medium",
                 "recipient_group_ids": gid}
         data.update(extra)
-        self.client.post(f"/admin/events/{self._make_capa_event()}/alerts", data=data)
+        self.client.post(f"/admin/defects/{self._make_capa_event()}/alerts", data=data)
         db = SessionLocal()
         try:
             return db.query(Alert).filter(Alert.title == title).first().id
@@ -305,7 +305,7 @@ class AlertsTest(unittest.TestCase):
         viewer = TestClient(app)
         viewer.post("/api/auth/browser-login",
                     data={"email": "v@acme.test", "password": "ViewerPass1!"})
-        resp = viewer.post(f"/admin/events/{eid}/alerts", data={
+        resp = viewer.post(f"/admin/defects/{eid}/alerts", data={
             "title": "Nope", "alert_type": "Quality", "severity": "Low",
             "recipient_group_ids": gid}, follow_redirects=False)
         self.assertEqual(resp.status_code, 403)

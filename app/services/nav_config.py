@@ -27,7 +27,7 @@ KEY_NAV_LAYOUT = "nav.layout"
 # Canonical registry of placeable modules ("flex containers"). ``key`` doubles
 # as the ``active_nav`` value each page sets, so the current item highlights.
 MODULES: dict[str, dict] = {
-    "events": {"label": "Events", "href": "/admin/events", "permission": "event:read"},
+    "defects": {"label": "Defects", "href": "/admin/defects", "permission": "event:read"},
     "alerts": {"label": "Alerts", "href": "/admin/alerts", "permission": "alert:read"},
     "audit-log": {"label": "Audit Log", "href": "/admin/audit-log", "permission": "audit_log:view"},
     "capa": {"label": "CAPA", "href": "/admin/capa", "permission": "capa:read"},
@@ -37,7 +37,7 @@ MODULES: dict[str, dict] = {
     "changes": {"label": "Change Control", "href": "/admin/changes", "permission": "change:read"},
     "reports": {"label": "Reports", "href": "/admin/reports", "permission": "dashboard:view"},
     "users": {"label": "Users", "href": "/admin/users", "permission": "user:manage"},
-    "settings": {"label": "Settings", "href": "/admin/settings/custom-fields", "permission": "settings:manage"},
+    "settings": {"label": "Settings", "href": "/admin/settings/groups", "permission": "settings:manage"},
 }
 
 # Nav module keys that show a live open-item count badge, and the statuses
@@ -53,7 +53,7 @@ _OPEN_ALERT_STATUSES = (AlertStatus.OPEN.value, AlertStatus.ACKNOWLEDGED.value)
 # The default sidebar: mirrors the historical layout (Dashboard removed).
 DEFAULT_LAYOUT: dict = {
     "groups": [
-        {"title": "Operations", "modules": ["events", "alerts", "audit-log"]},
+        {"title": "Operations", "modules": ["defects", "alerts", "audit-log"]},
         {
             "title": "Management",
             "modules": [
@@ -131,8 +131,8 @@ def build_nav(layout: dict, granted: Iterable[str]) -> list[dict]:
 def _nav_counts(db: Session, organization_id: int, keys: set[str]) -> dict[str, int]:
     """Open-item counts for the nav badge, one targeted query per requested key."""
     counts: dict[str, int] = {}
-    if "events" in keys:
-        counts["events"] = (
+    if "defects" in keys:
+        counts["defects"] = (
             db.query(Event)
             .filter(Event.organization_id == organization_id, Event.status.in_(_OPEN_EVENT_STATUSES))
             .count()
@@ -159,7 +159,7 @@ def visible_nav(db: Session, user) -> list[dict]:
     nav = build_nav(layout, granted)
 
     if user.organization_id:
-        keys = {m["key"] for g in nav for m in g["modules"]} & {"events", "capa", "alerts"}
+        keys = {m["key"] for g in nav for m in g["modules"]} & {"defects", "capa", "alerts"}
         if keys:
             counts = _nav_counts(db, user.organization_id, keys)
             for group in nav:

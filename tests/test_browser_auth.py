@@ -61,7 +61,7 @@ class BrowserAuthFlowTest(unittest.TestCase):
     def test_admin_requires_authentication(self):
         # No cookie, no bearer token -> the auth dependency must reject.
         fresh = TestClient(app)
-        response = fresh.get("/admin/events")
+        response = fresh.get("/admin/defects")
         self.assertIn(response.status_code, (401, 403))
 
     def test_form_login_sets_cookie_and_loads_landing(self):
@@ -73,13 +73,13 @@ class BrowserAuthFlowTest(unittest.TestCase):
             data={"email": self.email, "password": self.password},
         )
         self.assertEqual(login.status_code, 204)
-        self.assertEqual(login.headers.get("HX-Redirect"), "/admin/events")
+        self.assertEqual(login.headers.get("HX-Redirect"), "/admin/defects")
         self.assertIn("access_token", self.client.cookies)
 
         # The cookie set above is now carried automatically by the client.
-        landing = self.client.get("/admin/events")
+        landing = self.client.get("/admin/defects")
         self.assertEqual(landing.status_code, 200)
-        self.assertIn("events", landing.text.lower())
+        self.assertIn("defects", landing.text.lower())
 
     def test_form_login_rejects_bad_credentials(self):
         response = self.client.post(
@@ -102,7 +102,7 @@ class BrowserAuthFlowTest(unittest.TestCase):
         self.assertEqual(logout.headers.get("HX-Redirect"), "/login")
         # After logout the admin area is no longer reachable.
         self.client.cookies.clear()
-        blocked = self.client.get("/admin/events")
+        blocked = self.client.get("/admin/defects")
         self.assertIn(blocked.status_code, (401, 403))
 
 

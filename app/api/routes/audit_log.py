@@ -32,7 +32,7 @@ templates = Jinja2Templates(
 
 # Friendly labels for the raw ``__audit_entity__`` values written to the trail.
 ENTITY_TYPE_LABELS: dict[str, str] = {
-    "event": "Event",
+    "event": "Defect",
     "capa": "CAPA",
     "document": "Document",
     "document_version": "Document Version",
@@ -48,7 +48,7 @@ ENTITY_TYPE_LABELS: dict[str, str] = {
 
 # Entity types that have a browsable detail page, for optional row links.
 ENTITY_LINK_PREFIXES: dict[str, str] = {
-    "event": "/admin/events/",
+    "event": "/admin/defects/",
     "document": "/admin/documents/",
     "audit": "/admin/audits/",
     "change_request": "/admin/changes/",

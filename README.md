@@ -10,8 +10,8 @@ PostgreSQL, with schema managed by Alembic.
 
 ## Features
 
-- **Quality Events** — capture, investigate, and close events with a governed
-  status workflow and configurable custom fields.
+- **Defects** — capture, investigate, and close quality defects with a governed
+  status workflow.
 - **CAPA** — corrective/preventive actions with verification.
 - **Documents** — document control with review, approval, and obsolescence.
 - **Audits** — plan and conduct audits with checklists and findings.

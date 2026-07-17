@@ -7,9 +7,9 @@
 <h1>Create Quality/Safety Alert</h1>
 <div class="crumb">
     {% if event %}
-    <a href="/admin/events/{{ event.id }}">Event #{{ event.id }}</a> &middot; {{ event.title }}
+    <a href="/admin/defects/{{ event.id }}">Defect #{{ event.id }}</a> &middot; {{ event.title }}
     {% else %}
-    <a href="/admin/alerts">Alerts</a> &middot; Standalone (no source event)
+    <a href="/admin/alerts">Alerts</a> &middot; Standalone (no source defect)
     {% endif %}
 </div>
 {% endblock %}

@@ -1,7 +1,7 @@
 {% if rows %}
 <div class="table-scroll">
     <table class="data-table">
-        <thead><tr><th>Owner</th><th class="num">Overdue events</th></tr></thead>
+        <thead><tr><th>Owner</th><th class="num">Overdue defects</th></tr></thead>
         <tbody>
             {% for row in rows %}
             <tr><td>{{ row.owner }}</td><td class="num">{{ row.count }}</td></tr>
@@ -10,5 +10,5 @@
     </table>
 </div>
 {% else %}
-<p class="muted">No overdue events. 🎉</p>
+<p class="muted">No overdue defects. 🎉</p>
 {% endif %}

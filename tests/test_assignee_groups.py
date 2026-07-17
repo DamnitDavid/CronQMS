@@ -84,7 +84,7 @@ class AssigneeGroupsTest(unittest.TestCase):
         gid = self._make_group()
         _, uid = self._ids()
         # Assign to group.
-        r = self.client.post("/admin/events/create", data={
+        r = self.client.post("/admin/defects/create", data={
             "title": "Group event", "event_type": "Defect",
             "priority": "Low", "assignee": f"group:{gid}"})
         self.assertEqual(r.status_code, 200)
@@ -97,7 +97,7 @@ class AssigneeGroupsTest(unittest.TestCase):
         finally:
             db.close()
         # Assign a different event to a single user.
-        self.client.post("/admin/events/create", data={
+        self.client.post("/admin/defects/create", data={
             "title": "User event", "event_type": "Defect",
             "priority": "Low", "assignee": f"user:{uid}"})
         db = SessionLocal()

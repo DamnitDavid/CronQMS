@@ -1,25 +1,25 @@
 {% extends "base_admin.html" %}
 
-{% block title %}Events{% endblock %}
-{% set active_nav = "events" %}
+{% block title %}Defects{% endblock %}
+{% set active_nav = "defects" %}
 
 {% block admin_content %}
 {% if can_create %}
 <section class="page-actions">
-    <a class="button-primary" href="/admin/events/create">New Event</a>
+    <a class="button-primary" href="/admin/defects/create">New Defect</a>
 </section>
 {% endif %}
 
 <section class="filter-bar">
     <form class="filter-form"
-          hx-get="/admin/events"
+          hx-get="/admin/defects"
           hx-target="#eventTable"
           hx-swap="outerHTML"
           hx-include="this"
           hx-indicator="#eventsPane">
         <label>
             Search
-            <input type="search" name="search" placeholder="Search events..." value="{{ filters.search }}">
+            <input type="search" name="search" placeholder="Search defects..." value="{{ filters.search }}">
         </label>
         <label>
             Status
@@ -40,13 +40,8 @@
             </select>
         </label>
         <label>
-            Event Type
-            <select name="event_type"
-                    hx-get="/admin/events/filter-fields"
-                    hx-target="#filter-custom"
-                    hx-swap="innerHTML"
-                    hx-trigger="change"
-                    hx-include="this">
+            Defect Type
+            <select name="event_type">
                 <option value="">All</option>
                 {% for t in event_types %}
                 <option value="{{ t }}" {% if filters.event_type == t %}selected{% endif %}>{{ event_type_label(t) }}</option>
@@ -54,12 +49,8 @@
             </select>
         </label>
 
-        <span id="filter-custom" class="filter-custom">
-            {% include "admin/events/_filter_fields.html" %}
-        </span>
-
         <button type="submit">Filter</button>
-        <a class="button-secondary" href="/admin/events">Reset</a>
+        <a class="button-secondary" href="/admin/defects">Reset</a>
     </form>
 </section>
 
@@ -71,6 +62,6 @@
         <div class="sk-row"><div class="sk"></div><div class="sk" style="width:88%"></div><div class="sk sk-pill"></div><div class="sk sk-pill"></div><div class="sk" style="width:70%"></div></div>
         <div class="sk-row"><div class="sk"></div><div class="sk" style="width:72%"></div><div class="sk sk-pill"></div><div class="sk sk-pill"></div><div class="sk" style="width:70%"></div></div>
     </div>
-    {% include "admin/events/_event_table.html" %}
+    {% include "admin/defects/_event_table.html" %}
 </div>
 {% endblock %}

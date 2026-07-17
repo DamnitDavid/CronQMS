@@ -1,4 +1,4 @@
-"""Server-rendered admin sections: Settings (custom fields), Users, Reports, CAPA.
+"""Server-rendered admin sections: Settings, Users, Reports, CAPA.
 
 These are the browser UIs for capabilities that previously existed only as JSON
 APIs (or, for Settings, not at all). They mirror the Post/Redirect/Get pattern in
@@ -7,6 +7,7 @@ from the API.
 """
 
 import os
+from datetime import date
 from typing import Optional
 from urllib.parse import quote
 
@@ -18,10 +19,7 @@ from sqlalchemy.orm import Session
 from app.core.permissions import Permission, require_permission
 from app.core.security import generate_temp_password, hash_password
 from app.database import get_db
-from app.models import AssigneeGroup, Capa, CustomField, User
-from app.models.custom_field import CustomFieldType
-from app.models.event import EventType, event_type_label
-from app.services.custom_fields import fields_for, unique_key
+from app.models import AssigneeGroup, Capa, CapaStatus, User, VerificationOutcome
 from app.services import nav_config, org_settings
 
 router = APIRouter(tags=["Admin"])
@@ -29,28 +27,16 @@ router = APIRouter(tags=["Admin"])
 templates = Jinja2Templates(
     directory=os.path.join(os.path.dirname(__file__), "..", "..", "templates")
 )
-templates.env.globals["event_type_label"] = event_type_label
-
-EVENT_TYPES = [t.value for t in EventType]
-FIELD_TYPES = [t.value for t in CustomFieldType]
 
 # Default role assigned to a newly created user when none is chosen.
 DEFAULT_NEW_USER_ROLE = "User"
-
-
-# --- Settings: custom fields -----------------------------------------------
-def _settings_redirect(event_type: str, error: Optional[str] = None) -> RedirectResponse:
-    url = f"/admin/settings/custom-fields?event_type={quote(event_type)}"
-    if error:
-        url += f"&error={quote(error)}"
-    return RedirectResponse(url, status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/admin/settings")
 async def settings_home(
     current_user: User = Depends(require_permission(Permission.SETTINGS_MANAGE)),
 ):
-    return RedirectResponse("/admin/settings/custom-fields", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse("/admin/settings/groups", status_code=status.HTTP_303_SEE_OTHER)
 
 
 # --- Settings: Config (org-wide toggles) -----------------------------------
@@ -216,96 +202,6 @@ async def navigation_save(
     return RedirectResponse(
         "/admin/settings/navigation?saved=1", status_code=status.HTTP_303_SEE_OTHER
     )
-
-
-@router.get("/admin/settings/custom-fields")
-async def custom_fields_page(
-    request: Request,
-    current_user: User = Depends(require_permission(Permission.SETTINGS_MANAGE)),
-    db: Session = Depends(get_db),
-    event_type: str = EventType.DEFECT.value,
-    error: Optional[str] = None,
-):
-    if event_type not in EVENT_TYPES:
-        event_type = EventType.DEFECT.value
-    fields = fields_for(db, current_user.organization_id, event_type)
-    return templates.TemplateResponse(
-        "admin/settings/custom_fields.html",
-        {
-            "request": request,
-            "current_user": current_user,
-            "event_types": EVENT_TYPES,
-            "field_types": FIELD_TYPES,
-            "selected_type": event_type,
-            "fields": fields,
-            "error": error,
-        },
-    )
-
-
-@router.post("/admin/settings/custom-fields")
-async def custom_field_create(
-    current_user: User = Depends(require_permission(Permission.SETTINGS_MANAGE)),
-    db: Session = Depends(get_db),
-    event_type: str = Form(...),
-    label: str = Form(...),
-    field_type: str = Form(...),
-    options: str = Form(""),
-    required: bool = Form(False),
-):
-    if event_type not in EVENT_TYPES:
-        return _settings_redirect(EventType.DEFECT.value, "Unknown event type.")
-    label = label.strip()
-    if not label:
-        return _settings_redirect(event_type, "Field label is required.")
-    if field_type not in FIELD_TYPES:
-        return _settings_redirect(event_type, "Unknown field type.")
-
-    option_lines = [line.strip() for line in options.splitlines() if line.strip()]
-    stored_options = None
-    if field_type == CustomFieldType.SELECT.value:
-        if not option_lines:
-            return _settings_redirect(event_type, "Dropdown fields need at least one option.")
-        stored_options = "\n".join(option_lines)
-
-    order = len(fields_for(db, current_user.organization_id, event_type))
-    db.add(
-        CustomField(
-            organization_id=current_user.organization_id,
-            event_type=event_type,
-            label=label,
-            key=unique_key(db, current_user.organization_id, event_type, label),
-            field_type=field_type,
-            options=stored_options,
-            required=required,
-            display_order=order,
-            is_active=True,
-        )
-    )
-    db.commit()
-    return _settings_redirect(event_type)
-
-
-@router.post("/admin/settings/custom-fields/{field_id}/delete")
-async def custom_field_delete(
-    field_id: int,
-    current_user: User = Depends(require_permission(Permission.SETTINGS_MANAGE)),
-    db: Session = Depends(get_db),
-):
-    field = (
-        db.query(CustomField)
-        .filter(
-            CustomField.id == field_id,
-            CustomField.organization_id == current_user.organization_id,
-        )
-        .first()
-    )
-    event_type = field.event_type if field else EventType.DEFECT.value
-    if field is not None:
-        field.is_active = False
-        db.add(field)
-        db.commit()
-    return _settings_redirect(event_type)
 
 
 # --- Settings: assignee groups ---------------------------------------------
@@ -629,6 +525,23 @@ async def reports_overdue_fragment(
 
 
 # --- CAPA ------------------------------------------------------------------
+def _to_int(value: Optional[str]) -> Optional[int]:
+    return int(value) if value not in (None, "") else None
+
+
+def _to_date(value: Optional[str]) -> Optional[date]:
+    return date.fromisoformat(value) if value else None
+
+
+def _capa_permission_flags(user: User) -> dict:
+    granted = getattr(user, "granted_permissions", set())
+    return {"can_create": Permission.CAPA_CREATE.value in granted}
+
+
+def _org_users(db: Session, organization_id: int) -> list[User]:
+    return db.query(User).filter(User.organization_id == organization_id).all()
+
+
 @router.get("/admin/capa")
 async def capa_page(
     request: Request,
@@ -652,5 +565,58 @@ async def capa_page(
             "current_user": current_user,
             "capas": capas,
             "owner_emails": owner_emails,
+            "perms": _capa_permission_flags(current_user),
         },
     )
+
+
+@router.get("/admin/capa/create")
+async def capa_create_page(
+    request: Request,
+    current_user: User = Depends(require_permission(Permission.CAPA_CREATE)),
+    db: Session = Depends(get_db),
+    error: Optional[str] = None,
+):
+    return templates.TemplateResponse(
+        "admin/capa/create.html",
+        {
+            "request": request,
+            "current_user": current_user,
+            "users": _org_users(db, current_user.organization_id),
+            "error": error,
+        },
+    )
+
+
+@router.post("/admin/capa/create")
+async def capa_create_submit(
+    current_user: User = Depends(require_permission(Permission.CAPA_CREATE)),
+    db: Session = Depends(get_db),
+    title: str = Form(...),
+    owner_id: Optional[str] = Form(None),
+    due_date: Optional[str] = Form(None),
+    root_cause_category: str = Form(""),
+    rca_method: str = Form(""),
+    containment_actions: str = Form(""),
+    root_cause: str = Form(""),
+    corrective_action: str = Form(""),
+    preventive_action: str = Form(""),
+):
+    capa = Capa(
+        organization_id=current_user.organization_id,
+        title=title.strip(),
+        status=CapaStatus.OPEN.value,
+        verification_outcome=VerificationOutcome.PENDING.value,
+        owner_id=_to_int(owner_id),
+        due_date=_to_date(due_date),
+        root_cause_category=root_cause_category or None,
+        rca_method=rca_method or None,
+        containment_actions=containment_actions or None,
+        root_cause=root_cause or None,
+        corrective_action=corrective_action or None,
+        preventive_action=preventive_action or None,
+        created_by=current_user.id,
+    )
+    db.add(capa)
+    db.commit()
+    return RedirectResponse("/admin/capa", status_code=status.HTTP_303_SEE_OTHER)

@@ -1,12 +1,12 @@
 {% extends "base_admin.html" %}
 
 {% block title %}{{ event.title }}{% endblock %}
-{% set active_nav = "events" %}
+{% set active_nav = "defects" %}
 
 {% block page_heading %}
 <h1>{{ event.title }}</h1>
 <div class="crumb">
-    <a href="/admin/events">Events</a> &middot; #{{ event.id }} &middot; {{ event_type_label(event.event_type) }}
+    <a href="/admin/defects">Defects</a> &middot; #{{ event.id }} &middot; {{ event_type_label(event.event_type) }}
     &middot; <span class="badge status-{{ event.status }}">{{ event.status }}</span>
     {% if event.is_overdue %}<span class="badge overdue">Overdue</span>{% endif %}
 </div>
@@ -16,37 +16,37 @@
 {% if error %}<div class="banner-error">{{ error }}</div>{% endif %}
 
 <section class="card action-bar">
-    {% if perms.can_edit %}<a class="button-secondary" href="/admin/events/{{ event.id }}/edit">Edit</a>{% endif %}
+    {% if perms.can_edit %}<a class="button-secondary" href="/admin/defects/{{ event.id }}/edit">Edit</a>{% endif %}
 
     {% if perms.can_create_alert and event.event_type == "CAPA" %}
-    <a class="button-primary" href="/admin/events/{{ event.id }}/alerts/new">Create Alert</a>
+    <a class="button-primary" href="/admin/defects/{{ event.id }}/alerts/new">Create Alert</a>
     {% endif %}
 
     {% if perms.can_change_status and event.status == "Open" %}
-    <form method="post" action="/admin/events/{{ event.id }}/status">
+    <form method="post" action="/admin/defects/{{ event.id }}/status">
         <input type="hidden" name="status" value="In_Progress">
         <button class="button-primary" type="submit">Start Investigation</button>
     </form>
     {% endif %}
     {% if perms.can_change_status and event.status == "In_Progress" %}
-    <form method="post" action="/admin/events/{{ event.id }}/status">
+    <form method="post" action="/admin/defects/{{ event.id }}/status">
         <input type="hidden" name="status" value="Resolved">
         <button class="button-primary" type="submit">Mark Resolved</button>
     </form>
     {% endif %}
     {% if perms.can_change_status and event.status == "Resolved" %}
-    <form method="post" action="/admin/events/{{ event.id }}/status">
+    <form method="post" action="/admin/defects/{{ event.id }}/status">
         <input type="hidden" name="status" value="In_Progress">
         <button class="button-secondary" type="submit">Return to Investigation</button>
     </form>
     {% endif %}
     {% if perms.can_close and event.status == "Resolved" %}
-    <form method="post" action="/admin/events/{{ event.id }}/close">
+    <form method="post" action="/admin/defects/{{ event.id }}/close">
         <button class="button-primary" type="submit">Approve &amp; Close</button>
     </form>
     {% endif %}
     {% if perms.can_reopen and event.status == "Closed" %}
-    <form method="post" action="/admin/events/{{ event.id }}/reopen" class="inline-form">
+    <form method="post" action="/admin/defects/{{ event.id }}/reopen" class="inline-form">
         <input type="text" name="reason" placeholder="Reason for reopening" required>
         <button class="button-secondary" type="submit">Reopen</button>
     </form>
@@ -89,26 +89,6 @@
     </div>
 </section>
 
-{% if custom_fields %}
-<section class="card">
-    <h2>Custom Information</h2>
-    <div class="detail-grid">
-        {% for field in custom_fields %}
-        <div class="field">
-            <div class="label">{{ field.label }}</div>
-            <div class="value">
-                {%- if field.field_type == "boolean" -%}
-                    {{ "Yes" if custom_values.get(field.id) == "true" else "No" }}
-                {%- else -%}
-                    {{ custom_values.get(field.id) or "—" }}
-                {%- endif -%}
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-</section>
-{% endif %}
-
 <section class="card">
     <h2>Attachments</h2>
     {% if attachments %}
@@ -124,7 +104,7 @@
     <p class="muted">No attachments.</p>
     {% endif %}
     {% if perms.can_edit %}
-    <form method="post" action="/admin/events/{{ event.id }}/attachments" enctype="multipart/form-data" class="inline-form" style="margin-top: 1rem;">
+    <form method="post" action="/admin/defects/{{ event.id }}/attachments" enctype="multipart/form-data" class="inline-form" style="margin-top: 1rem;">
         <input type="file" name="file" required>
         <button class="button-secondary" type="submit">Upload</button>
     </form>
@@ -144,7 +124,7 @@
         {% endfor %}
     </div>
     {% if perms.can_comment %}
-    <form method="post" action="/admin/events/{{ event.id }}/comments" class="inline-form" style="margin-top: 1rem;">
+    <form method="post" action="/admin/defects/{{ event.id }}/comments" class="inline-form" style="margin-top: 1rem;">
         <input type="text" name="body" placeholder="Add a comment…" required style="flex: 1;">
         <button class="button-primary" type="submit">Post</button>
     </form>

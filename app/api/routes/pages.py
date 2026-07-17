@@ -25,11 +25,9 @@ from app.core.auth import get_current_user_optional
 from app.core.permissions import Permission, require_permission
 from app.core.storage import get_storage
 from app.database import get_db
-from app.models import Attachment, Comment, Event, EventCustomValue, Site, User
+from app.models import Attachment, Comment, Event, Site, User
 from app.models import EventHistory
-from app.models.custom_field import CustomFieldType
 from app.models.event import EventStatus, EventType, event_type_label
-from app.services.custom_fields import fields_for, save_values, values_for
 from app.services.event_workflow import (
     WorkflowError,
     apply_status_transition,
@@ -60,7 +58,7 @@ def _event_or_404(db: Session, event_id: int, current_user: User) -> Event:
         # Render a simple 404 rather than leaking cross-org existence.
         from fastapi import HTTPException
 
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Defect not found")
     return event
 
 
@@ -128,7 +126,7 @@ def _to_date(value: Optional[str]) -> Optional[date]:
 
 
 def _redirect(event_id: int, error: Optional[str] = None) -> RedirectResponse:
-    url = f"/admin/events/{event_id}"
+    url = f"/admin/defects/{event_id}"
     if error:
         from urllib.parse import quote
 
@@ -144,7 +142,7 @@ async def login_page(
     db: Session = Depends(get_db),
 ):
     if current_user:
-        return RedirectResponse("/admin/events", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse("/admin/defects", status_code=status.HTTP_303_SEE_OTHER)
     # Before any admin exists, the login page is a dead end — route first-run
     # visitors to the setup wizard instead.
     if not admin_exists(db):
@@ -159,42 +157,6 @@ async def register_page(request: Request):
     if not get_settings().allow_public_registration:
         return RedirectResponse("/login", status_code=status.HTTP_303_SEE_OTHER)
     return templates.TemplateResponse("auth/register.html", {"request": request})
-
-
-# --- custom fields fragment (htmx) -----------------------------------------
-@router.get("/admin/events/custom-fields")
-async def event_custom_fields_fragment(
-    request: Request,
-    current_user: User = Depends(require_permission(Permission.EVENT_READ)),
-    db: Session = Depends(get_db),
-    event_type: str = EventType.DEFECT.value,
-    event_id: Optional[str] = None,
-):
-    """Render the custom-field inputs for an event type (htmx swap target).
-
-    When ``event_id`` is given (edit flow) the inputs are prefilled from the
-    event's saved values, scoped to the caller's organization.
-    """
-    if event_type not in EVENT_TYPE_VALUES:
-        event_type = EventType.DEFECT.value
-    fields = fields_for(db, current_user.organization_id, event_type)
-    values: dict[int, str] = {}
-    eid = _to_int(event_id)
-    if eid is not None:
-        event = (
-            db.query(Event)
-            .filter(
-                Event.id == eid,
-                Event.organization_id == current_user.organization_id,
-            )
-            .first()
-        )
-        if event is not None:
-            values = values_for(db, event.id)
-    return templates.TemplateResponse(
-        "admin/events/_custom_fields.html",
-        {"request": request, "custom_fields": fields, "custom_values": values},
-    )
 
 
 # --- event list & create ---------------------------------------------------
@@ -220,28 +182,7 @@ def _assignee_labels(db: Session, events: list[Event], organization_id: int) -> 
     return labels
 
 
-def _apply_custom_field_filters(db: Session, query, organization_id: int, event_type: str, params):
-    """Constrain ``query`` by any ``cf_<id>`` filters present in ``params``."""
-    if not event_type or event_type not in EVENT_TYPE_VALUES:
-        return query
-    for field in fields_for(db, organization_id, event_type):
-        raw = (params.get(f"cf_{field.id}") or "").strip()
-        if not raw:
-            continue
-        value_col = EventCustomValue.value
-        if field.field_type in (CustomFieldType.TEXT.value, CustomFieldType.NUMBER.value):
-            condition = value_col.ilike(f"%{raw}%")
-        else:
-            condition = value_col == raw
-        subquery = (
-            db.query(EventCustomValue.event_id)
-            .filter(EventCustomValue.custom_field_id == field.id, condition)
-        )
-        query = query.filter(Event.id.in_(subquery))
-    return query
-
-
-@router.get("/admin/events")
+@router.get("/admin/defects")
 async def admin_events_page(
     request: Request,
     current_user: User = Depends(require_permission(Permission.EVENT_READ)),
@@ -265,9 +206,6 @@ async def admin_events_page(
         query = query.filter(
             or_(Event.title.ilike(f"%{search}%"), Event.description.ilike(f"%{search}%"))
         )
-    query = _apply_custom_field_filters(
-        db, query, current_user.organization_id, event_type, request.query_params
-    )
     events = query.order_by(Event.updated_at.desc()).limit(50).all()
     context = {
         "request": request,
@@ -282,40 +220,17 @@ async def admin_events_page(
             "priority": priority or "",
             "event_type": event_type or "",
         },
-        "filter_fields": (
-            fields_for(db, current_user.organization_id, event_type)
-            if event_type in EVENT_TYPE_VALUES else []
-        ),
-        "filter_values": request.query_params,
     }
     # htmx swaps only the table; a direct navigation gets the whole page.
-    template = "admin/events/_event_table.html" if "HX-Request" in request.headers else "admin/events/list.html"
+    template = "admin/defects/_event_table.html" if "HX-Request" in request.headers else "admin/defects/list.html"
     return templates.TemplateResponse(template, context)
-
-
-@router.get("/admin/events/filter-fields")
-async def event_filter_fields_fragment(
-    request: Request,
-    current_user: User = Depends(require_permission(Permission.EVENT_READ)),
-    db: Session = Depends(get_db),
-    event_type: Optional[str] = None,
-):
-    """Custom-field filter controls for an event type (htmx swap target)."""
-    fields = (
-        fields_for(db, current_user.organization_id, event_type)
-        if event_type in EVENT_TYPE_VALUES else []
-    )
-    return templates.TemplateResponse(
-        "admin/events/_filter_fields.html",
-        {"request": request, "filter_fields": fields, "filter_values": request.query_params},
-    )
 
 
 def _permission_flags_create(user: User) -> bool:
     return Permission.EVENT_CREATE.value in getattr(user, "granted_permissions", set())
 
 
-@router.get("/admin/events/create")
+@router.get("/admin/defects/create")
 async def admin_events_create_page(
     request: Request,
     current_user: User = Depends(require_permission(Permission.EVENT_CREATE)),
@@ -326,7 +241,7 @@ async def admin_events_create_page(
     users = db.query(User).filter(User.organization_id == current_user.organization_id).all()
     default_type = EventType.DEFECT.value
     return templates.TemplateResponse(
-        "admin/events/create.html",
+        "admin/defects/create.html",
         {
             "request": request,
             "current_user": current_user,
@@ -335,22 +250,13 @@ async def admin_events_create_page(
             "groups": _org_groups(db, current_user.organization_id),
             "event_types": sorted(EVENT_TYPE_VALUES),
             "selected_type": default_type,
-            "custom_fields": fields_for(db, current_user.organization_id, default_type),
-            "custom_values": {},
             "error": error,
         },
     )
 
 
-def _create_redirect_error(message: str) -> RedirectResponse:
-    return RedirectResponse(
-        f"/admin/events/create?error={quote(message)}", status_code=status.HTTP_303_SEE_OTHER
-    )
-
-
-@router.post("/admin/events/create")
+@router.post("/admin/defects/create")
 async def admin_events_create_submit(
-    request: Request,
     current_user: User = Depends(require_permission(Permission.EVENT_CREATE)),
     db: Session = Depends(get_db),
     title: str = Form(...),
@@ -388,19 +294,13 @@ async def admin_events_create_submit(
         machine=machine or None,
     )
     db.add(event)
-    db.flush()  # assign event.id before saving custom values
-    fields = fields_for(db, current_user.organization_id, event_type)
-    error = save_values(db, event, fields, await request.form())
-    if error:
-        db.rollback()
-        return _create_redirect_error(error)
     db.commit()
     db.refresh(event)
     return _redirect(event.id)
 
 
 # --- event detail ----------------------------------------------------------
-@router.get("/admin/events/{event_id}")
+@router.get("/admin/defects/{event_id}")
 async def event_detail_page(
     event_id: int,
     request: Request,
@@ -422,7 +322,7 @@ async def event_detail_page(
         .all()
     )
     return templates.TemplateResponse(
-        "admin/events/detail.html",
+        "admin/defects/detail.html",
         {
             "request": request,
             "current_user": current_user,
@@ -432,15 +332,13 @@ async def event_detail_page(
             "history": history,
             "user_emails": _org_user_emails(db, current_user.organization_id),
             "perms": _permission_flags(current_user),
-            "custom_fields": fields_for(db, current_user.organization_id, event.event_type),
-            "custom_values": values_for(db, event.id),
             "error": error,
         },
     )
 
 
 # --- event edit ------------------------------------------------------------
-@router.get("/admin/events/{event_id}/edit")
+@router.get("/admin/defects/{event_id}/edit")
 async def event_edit_page(
     event_id: int,
     request: Request,
@@ -451,7 +349,7 @@ async def event_edit_page(
     sites = db.query(Site).filter(Site.organization_id == current_user.organization_id).all()
     users = db.query(User).filter(User.organization_id == current_user.organization_id).all()
     return templates.TemplateResponse(
-        "admin/events/edit.html",
+        "admin/defects/edit.html",
         {
             "request": request,
             "current_user": current_user,
@@ -460,16 +358,13 @@ async def event_edit_page(
             "users": users,
             "groups": _org_groups(db, current_user.organization_id),
             "event_types": sorted(EVENT_TYPE_VALUES),
-            "custom_fields": fields_for(db, current_user.organization_id, event.event_type),
-            "custom_values": values_for(db, event.id),
         },
     )
 
 
-@router.post("/admin/events/{event_id}/edit")
+@router.post("/admin/defects/{event_id}/edit")
 async def event_edit_submit(
     event_id: int,
-    request: Request,
     current_user: User = Depends(require_permission(Permission.EVENT_UPDATE)),
     db: Session = Depends(get_db),
     title: str = Form(...),
@@ -503,17 +398,12 @@ async def event_edit_submit(
     event.work_order = work_order or None
     event.machine = machine or None
     db.add(event)
-    fields = fields_for(db, current_user.organization_id, event_type)
-    error = save_values(db, event, fields, await request.form())
-    if error:
-        db.rollback()
-        return _redirect(event_id, error)
     db.commit()
     return _redirect(event_id)
 
 
 # --- workflow actions ------------------------------------------------------
-@router.post("/admin/events/{event_id}/status")
+@router.post("/admin/defects/{event_id}/status")
 async def event_status_action(
     event_id: int,
     current_user: User = Depends(require_permission(Permission.EVENT_CHANGE_STATUS)),
@@ -530,7 +420,7 @@ async def event_status_action(
     return _redirect(event_id)
 
 
-@router.post("/admin/events/{event_id}/close")
+@router.post("/admin/defects/{event_id}/close")
 async def event_close_action(
     event_id: int,
     current_user: User = Depends(require_permission(Permission.EVENT_APPROVE_CLOSURE)),
@@ -546,7 +436,7 @@ async def event_close_action(
     return _redirect(event_id)
 
 
-@router.post("/admin/events/{event_id}/reopen")
+@router.post("/admin/defects/{event_id}/reopen")
 async def event_reopen_action(
     event_id: int,
     current_user: User = Depends(require_permission(Permission.EVENT_REOPEN)),
@@ -563,7 +453,7 @@ async def event_reopen_action(
     return _redirect(event_id)
 
 
-@router.post("/admin/events/{event_id}/comments")
+@router.post("/admin/defects/{event_id}/comments")
 async def event_comment_action(
     event_id: int,
     current_user: User = Depends(require_permission(Permission.EVENT_COMMENT)),
@@ -577,7 +467,7 @@ async def event_comment_action(
     return _redirect(event_id)
 
 
-@router.post("/admin/events/{event_id}/attachments")
+@router.post("/admin/defects/{event_id}/attachments")
 async def event_attachment_action(
     event_id: int,
     current_user: User = Depends(require_permission(Permission.EVENT_UPDATE)),
