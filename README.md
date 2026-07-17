@@ -1,6 +1,6 @@
-# Pro-Ins-QMS
+# CronQMS
 
-Proins is a **Quality Event Management System (QMS)** for manufacturing SMBs. It
+CronQMS is a **Quality Event Management System (QMS)** for manufacturing SMBs. It
 tracks the quality lifecycle end to end — events, investigations, corrective and
 preventive actions, controlled documents, audits, training, and change control —
 with role-based access control and an append-only audit trail.
@@ -147,7 +147,7 @@ independently.
 
 ## Production checklist
 
-Before exposing Proins publicly:
+Before exposing CronQMS publicly:
 
 - [ ] Set `ENVIRONMENT=production` and `DEBUG=false`.
 - [ ] Set strong, unique `SECRET_KEY` and `JWT_SECRET` (e.g. `openssl rand -hex 32`).

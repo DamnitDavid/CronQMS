@@ -66,7 +66,7 @@
         const select = document.getElementById("themeSelect");
         if (!select) return;
         const root = document.documentElement;
-        const STORAGE_KEY = "proins-theme";
+        const STORAGE_KEY = "cronqms-theme";
         const current = (function () {
             try { return localStorage.getItem(STORAGE_KEY) === "dark" ? "dark" : "light"; }
             catch (e) { return "light"; }

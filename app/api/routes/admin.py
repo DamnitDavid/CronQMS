@@ -1,4 +1,4 @@
-"""Admin stats endpoints for Proins.
+"""Admin stats endpoints for CronQMS.
 
 The dashboard page was removed; these JSON endpoints remain as the machine
 interface for organization-scoped event statistics and recent activity.

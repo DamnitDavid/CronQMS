@@ -7,9 +7,9 @@ import tempfile
 import unittest
 import uuid
 
-os.environ.setdefault("DATABASE_URL", "sqlite:///./test_proins.db")
+os.environ.setdefault("DATABASE_URL", "sqlite:///./test_cronqms.db")
 # Isolate attachment storage in a throwaway directory.
-_STORAGE_DIR = os.path.join(tempfile.gettempdir(), f"proins_attach_test_{uuid.uuid4().hex}")
+_STORAGE_DIR = os.path.join(tempfile.gettempdir(), f"cronqms_attach_test_{uuid.uuid4().hex}")
 os.environ["ATTACHMENT_STORAGE_DIR"] = _STORAGE_DIR
 
 from fastapi.testclient import TestClient
@@ -76,7 +76,7 @@ class AttachmentsTest(unittest.TestCase):
     def tearDownClass(cls):
         Base.metadata.drop_all(bind=engine)
         engine.dispose()
-        db_path = os.path.join(os.getcwd(), "test_proins.db")
+        db_path = os.path.join(os.getcwd(), "test_cronqms.db")
         if os.path.exists(db_path):
             os.remove(db_path)
         shutil.rmtree(_STORAGE_DIR, ignore_errors=True)

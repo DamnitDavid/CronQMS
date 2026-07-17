@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     const root = document.documentElement;
-    const STORAGE_KEY = "proins-theme";
+    const STORAGE_KEY = "cronqms-theme";
 
     const applyTheme = (theme) => {
         const dark = theme === "dark";

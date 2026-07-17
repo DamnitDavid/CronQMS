@@ -10,7 +10,7 @@ import uuid
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///./test_alerts.db")
 # Isolate acknowledgement storage in a throwaway directory.
-_STORAGE_DIR = os.path.join(tempfile.gettempdir(), f"proins_alert_test_{uuid.uuid4().hex}")
+_STORAGE_DIR = os.path.join(tempfile.gettempdir(), f"cronqms_alert_test_{uuid.uuid4().hex}")
 os.environ["ATTACHMENT_STORAGE_DIR"] = _STORAGE_DIR
 
 from fastapi.testclient import TestClient

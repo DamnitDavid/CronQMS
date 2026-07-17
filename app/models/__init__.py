@@ -1,4 +1,4 @@
-"""SQLAlchemy models for Proins."""
+"""SQLAlchemy models for CronQMS."""
 
 from app.models.user import User, Role
 from app.models.role import RoleDefinition, RolePermission

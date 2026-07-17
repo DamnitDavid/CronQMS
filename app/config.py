@@ -28,13 +28,13 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # Application
-    app_name: str = "Proins"
+    app_name: str = "CronQMS"
     app_version: str = "0.1.0"
     debug: bool = False
     environment: str = "development"  # development, staging, production
 
     # Database
-    database_url: str = "postgresql://user:password@localhost:5432/proins"
+    database_url: str = "postgresql://user:password@localhost:5432/cronqms"
     database_echo: bool = False  # Log all SQL statements in development
 
     # Security
@@ -62,7 +62,7 @@ class Settings(BaseSettings):
 
     # Attachments: base directory for the local-disk storage backend. Swap the
     # backend in app/core/storage.py to move to S3.
-    attachment_storage_dir: str = os.path.join(tempfile.gettempdir(), "proins_attachments")
+    attachment_storage_dir: str = os.path.join(tempfile.gettempdir(), "cronqms_attachments")
     attachment_max_bytes: int = 25 * 1024 * 1024  # 25 MB
 
     class Config:

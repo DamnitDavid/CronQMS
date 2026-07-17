@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Proins design system
+   CronQMS design system
    An enterprise "app shell" style (fixed sidebar + top shell bar, dense data
    tables) with a light and dark theme. Tokens drive everything; the dark theme
    is a token override applied via [data-theme="dark"] (with a .dark-mode alias

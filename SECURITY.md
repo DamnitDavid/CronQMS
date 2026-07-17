@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you believe you have found a security vulnerability in Proins, please report
+If you believe you have found a security vulnerability in CronQMS, please report
 it privately so it can be addressed before public disclosure.
 
 - **Do not** open a public GitHub issue for security reports.
@@ -24,7 +24,7 @@ commits or tags yet.
 
 ## Deployment Hardening
 
-Proins ships secure-by-default, but a real deployment must configure a few
+CronQMS ships secure-by-default, but a real deployment must configure a few
 things — see the "Production checklist" in [README.md](README.md). In summary:
 
 - Set strong, unique `SECRET_KEY` and `JWT_SECRET` values. The app **refuses to
