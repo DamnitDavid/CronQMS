@@ -30,6 +30,8 @@ class Permission(str, Enum):
     CAPA_READ = "capa:read"
     CAPA_UPDATE = "capa:update"
     CAPA_VERIFY = "capa:verify"
+    CAPA_REOPEN = "capa:reopen"
+    CAPA_CANCEL = "capa:cancel"
     DOCUMENT_CREATE = "document:create"
     DOCUMENT_READ = "document:read"
     DOCUMENT_UPDATE = "document:update"
@@ -81,6 +83,8 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.CAPA_READ,
         Permission.CAPA_UPDATE,
         Permission.CAPA_VERIFY,
+        Permission.CAPA_REOPEN,
+        Permission.CAPA_CANCEL,
         Permission.DOCUMENT_CREATE,
         Permission.DOCUMENT_READ,
         Permission.DOCUMENT_UPDATE,
@@ -193,6 +197,8 @@ PERMISSION_LABELS: dict[Permission, str] = {
     Permission.CAPA_READ: "View CAPAs",
     Permission.CAPA_UPDATE: "Edit CAPAs",
     Permission.CAPA_VERIFY: "Verify CAPAs",
+    Permission.CAPA_REOPEN: "Reopen CAPAs",
+    Permission.CAPA_CANCEL: "Cancel CAPAs",
     Permission.DOCUMENT_CREATE: "Create documents",
     Permission.DOCUMENT_READ: "View documents",
     Permission.DOCUMENT_UPDATE: "Edit documents & upload revisions",

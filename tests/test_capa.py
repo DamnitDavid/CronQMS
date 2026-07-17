@@ -86,11 +86,30 @@ class CapaTest(unittest.TestCase):
         payload.update(overrides)
         return self.client.post("/api/capas/", json=payload, headers=self._auth(who))
 
+    def _advance_to_effectiveness_check(self, capa_id, who="qm", owner_id=None):
+        """Drive a freshly created CAPA to Effectiveness_Check via the gated workflow."""
+        self.client.put(
+            f"/api/capas/{capa_id}",
+            json={
+                "initiating_cause": "Customer complaint",
+                "root_cause": "Oven profile drift",
+                "corrective_action": "Recalibrate oven",
+                "owner_id": owner_id if owner_id is not None else self.ids["investigator"],
+                "due_date": "2026-08-01",
+            },
+            headers=self._auth(who),
+        )
+        for target in ("Investigation", "Action_Plan", "Implementation", "Effectiveness_Check"):
+            resp = self.client.patch(
+                f"/api/capas/{capa_id}/status", json={"status": target}, headers=self._auth(who)
+            )
+            self.assertEqual(resp.status_code, 200, resp.text)
+
     def test_create_links_events_and_is_audited(self):
         resp = self._create_capa(event_ids=[self.event_id], owner_id=self.ids["investigator"])
         self.assertEqual(resp.status_code, 201, resp.text)
         body = resp.json()
-        self.assertEqual(body["status"], "Open")
+        self.assertEqual(body["status"], "Draft")
         self.assertEqual(body["event_ids"], [self.event_id])
         self.assertEqual(body["created_by"], self.ids["qm"])
 
@@ -118,22 +137,23 @@ class CapaTest(unittest.TestCase):
         resp = self.client.get(f"/api/capas/{capa_id}", headers=self._auth("other_admin"))
         self.assertEqual(resp.status_code, 404)
 
-    def test_update_status_and_relink(self):
+    def test_update_ignores_status_field_and_relinks(self):
         capa_id = self._create_capa(event_ids=[self.event_id]).json()["id"]
         resp = self.client.put(
             f"/api/capas/{capa_id}",
-            json={"status": "In_Progress", "corrective_action": "Re-flow oven recalibrated", "event_ids": []},
+            json={"status": "Implementation", "corrective_action": "Re-flow oven recalibrated", "event_ids": []},
             headers=self._auth("qm"),
         )
         self.assertEqual(resp.status_code, 200, resp.text)
         body = resp.json()
-        self.assertEqual(body["status"], "In_Progress")
+        self.assertEqual(body["status"], "Draft")
         self.assertEqual(body["event_ids"], [])
         self.assertEqual(body["corrective_action"], "Re-flow oven recalibrated")
 
     def test_effective_verification_closes_capa(self):
         # Owner is the investigator; approver (independent) verifies.
         capa_id = self._create_capa(owner_id=self.ids["investigator"]).json()["id"]
+        self._advance_to_effectiveness_check(capa_id, owner_id=self.ids["investigator"])
         resp = self.client.post(
             f"/api/capas/{capa_id}/verify",
             json={"outcome": "Effective", "reason": "No recurrence over 3 lots"},
@@ -160,6 +180,7 @@ class CapaTest(unittest.TestCase):
     def test_owner_cannot_verify_own_capa(self):
         # QM owns the CAPA and also holds CAPA_VERIFY; independence must block it.
         capa_id = self._create_capa(who="qm", owner_id=self.ids["qm"]).json()["id"]
+        self._advance_to_effectiveness_check(capa_id, owner_id=self.ids["qm"])
         resp = self.client.post(
             f"/api/capas/{capa_id}/verify",
             json={"outcome": "Effective"},
@@ -169,6 +190,7 @@ class CapaTest(unittest.TestCase):
 
     def test_investigator_cannot_verify(self):
         capa_id = self._create_capa().json()["id"]
+        self._advance_to_effectiveness_check(capa_id)
         resp = self.client.post(
             f"/api/capas/{capa_id}/verify",
             json={"outcome": "Effective"},
